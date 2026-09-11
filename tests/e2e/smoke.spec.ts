@@ -1,5 +1,20 @@
 import { expect, test } from '@playwright/test';
 
+test('does not load InsightFlare in Vite development mode', async ({ page }) => {
+  const analyticsRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('insightflare.ravelloh.top/script.js')) {
+      analyticsRequests.push(request.url());
+    }
+  });
+
+  await page.goto('/', { waitUntil: 'commit' });
+  await page.waitForTimeout(500);
+
+  expect(analyticsRequests).toEqual([]);
+  expect(await page.evaluate(() => 'insightflare' in window)).toBe(false);
+});
+
 test('loads the static SPA and preserves the add-timer hash flow', async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on('pageerror', (error) => runtimeErrors.push(`[pageerror] ${error.message}`));

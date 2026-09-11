@@ -1,7 +1,7 @@
 export type AnalyticsData = Record<string, unknown> | undefined;
 
 export function track(name: string, data?: AnalyticsData): void {
-  if (typeof window === 'undefined' || typeof window.insightflare?.track !== 'function') return;
+  if (import.meta.env.DEV || typeof window === 'undefined' || typeof window.insightflare?.track !== 'function') return;
   try {
     window.insightflare.track(name, data);
   } catch (error) {
@@ -10,7 +10,7 @@ export function track(name: string, data?: AnalyticsData): void {
 }
 
 export function trackOnce(name: string, data?: AnalyticsData): void {
-  if (typeof window === 'undefined' || typeof window.insightflare?.trackOnce !== 'function') return;
+  if (import.meta.env.DEV || typeof window === 'undefined' || typeof window.insightflare?.trackOnce !== 'function') return;
   try {
     window.insightflare.trackOnce(name, data);
   } catch (error) {

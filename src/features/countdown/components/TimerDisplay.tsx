@@ -503,7 +503,12 @@ export default function TimerDisplay() {
       </motion.h2>
       
       {/* 时间显示 */}
-      <AutoResizer animateWidth initial={false} className="flex items-center justify-center">
+      <AutoResizer
+        animateWidth
+        initial={false}
+        overflow="visible"
+        className="flex items-center justify-center"
+      >
       <motion.div 
         className={`flex items-center justify-center ${showYears ? 'flex-col sm:flex-row gap-2 sm:gap-0' : 'flex-row'} space-x-0 sm:space-x-4`}
         initial={{ scale: 0.9, opacity: 0 }}

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import Header from './Header';
 import Footer from './Footer';
 import UpdateToast from '@/features/notification/components/UpdateToast';
@@ -16,7 +16,7 @@ type LayoutProps = {
 export default function Layout({ children }: LayoutProps) {
   const { t } = useTranslation();
   const { isFullscreen } = useFullscreen();
-  const { isAbout } = usePageTransition();
+  const { isAbout, direction } = usePageTransition();
 
   return (
     <ThemeColorSynchronizer>
@@ -27,29 +27,45 @@ export default function Layout({ children }: LayoutProps) {
           {children}
 
           {!isFullscreen && (
-            <AutoTransition
-              transitionKey={isAbout ? 'about-visible' : 'about-hidden'}
-              initial={false}
-              type="slideUp"
-              customVariants={{
-                initial: { opacity: 0, y: 24 },
-                animate: { opacity: 1, y: 0 },
-                exit: { opacity: 0, y: 24 },
-              }}
-              className="absolute inset-0 z-20 overflow-hidden"
-            >
+            <AnimatePresence initial={false} custom={direction}>
               {isAbout ? (
                 <motion.div
-                  className="absolute inset-0 flex items-center justify-center overflow-hidden"
-                  style={{ backdropFilter: 'blur(16px)' }}
-                  data-page-view="about"
+                  key="about-visible"
+                  custom={direction}
+                  variants={{
+                    initial: (value: unknown) => ({ opacity: 0, y: value === 1 ? 56 : -56 }),
+                    animate: {
+                      opacity: 1,
+                      y: 0,
+                      transition: {
+                        duration: 0.36,
+                        delay: direction === 1 ? 0.3 : 0,
+                        ease: 'easeOut',
+                      },
+                    },
+                    exit: (value: unknown) => ({
+                      opacity: 0,
+                      y: value === 1 ? -56 : 56,
+                      transition: { duration: 0.28, ease: 'easeIn' },
+                    }),
+                  }}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  className="absolute inset-0 z-20 overflow-hidden"
                 >
-                  <AutoResizer initial={false} className="w-full">
-                    <Footer />
-                  </AutoResizer>
+                  <div
+                    className="absolute inset-0 flex items-center justify-center overflow-hidden"
+                    style={{ backdropFilter: 'blur(16px)' }}
+                    data-page-view="about"
+                  >
+                    <AutoResizer initial={false} className="w-full">
+                      <Footer />
+                    </AutoResizer>
+                  </div>
                 </motion.div>
               ) : null}
-            </AutoTransition>
+            </AnimatePresence>
           )}
         </div>
 

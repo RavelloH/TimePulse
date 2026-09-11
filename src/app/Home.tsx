@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { AutoResizer, AutoTransition } from '@/components/ui';
 import Layout from '@/components/layout/Layout';
 import { CustomBackground, GradientBackground } from '@/features/background/components';
@@ -11,13 +12,16 @@ import { useTheme } from './providers/ThemeProvider';
 import { useFullscreen } from './providers/FullscreenProvider';
 import { useTranslation } from '@/i18n/useTranslation';
 import { parseShareUrl } from '@/services/sharing';
+import { usePageTransition } from '@/hooks/usePageTransition';
 import type { Timer } from '../domain/timer';
 
 export default function Home() {
   const { timers, activeTimerId, setActiveTimerId, addTimer } = useTimers();
   const { theme, accentColor } = useTheme();
   const { isFullscreen } = useFullscreen();
+  const { isAbout, direction } = usePageTransition();
   const { t } = useTranslation();
+  const showMainPage = !isAbout || isFullscreen;
   
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isBackgroundSettingsOpen, setIsBackgroundSettingsOpen] = useState(false);
@@ -80,11 +84,44 @@ export default function Home() {
         <GradientBackground />
         <CustomBackground />
 
-        <main className={`relative z-10 flex h-full min-h-0 flex-col items-center justify-center overflow-hidden ${isFullscreen ? '' : 'py-12'}`}>
-          <AutoResizer className="w-full" initial={false}>
-            <TimerDisplay />
-          </AutoResizer>
-        </main>
+        <AnimatePresence initial={false} custom={direction}>
+          {showMainPage ? (
+            <motion.div
+              key="timer-page-visible"
+              custom={direction}
+              variants={{
+                initial: (value: unknown) => ({ opacity: 0, y: value === 1 ? 56 : -56 }),
+                animate: {
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    duration: 0.36,
+                    delay: !isAbout && direction === -1 ? 0.3 : 0,
+                    ease: 'easeOut',
+                  },
+                },
+                exit: (value: unknown) => ({
+                  opacity: 0,
+                  y: value === 1 ? -56 : 56,
+                  transition: { duration: 0.28, ease: 'easeIn' },
+                }),
+              }}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="absolute inset-0 z-10"
+            >
+              <main
+                className={`relative flex h-full min-h-0 flex-col items-center justify-center ${isFullscreen ? '' : 'py-12'}`}
+                data-page-view="main"
+              >
+                <AutoResizer className="w-full" initial={false} overflow="visible">
+                  <TimerDisplay />
+                </AutoResizer>
+              </main>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </Layout>
       
       

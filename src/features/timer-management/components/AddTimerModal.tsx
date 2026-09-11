@@ -125,14 +125,14 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto py-4"
+      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="glass-card w-full max-w-md m-4 p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
+        className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         <AutoResizer initial>
@@ -140,7 +140,7 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
         <>
         {step === 1 && (
           <>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center pb-6">
               <h2 className="text-2xl font-semibold">{t('modal.countdown.create', '创建倒计时')}</h2>
               <button
                 className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -150,9 +150,9 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
               </button>
             </div>
             
-            <div className="mb-6">
+            <div className="flex flex-col gap-4 pb-6">
               <button 
-                className="w-full glass-card p-4 mb-4 text-left flex items-center hover:bg-white/10 dark:hover:bg-black/10"
+                className="w-full glass-card p-4 text-left flex items-center hover:bg-white/10 dark:hover:bg-black/10"
                 onClick={() => setShowHolidaysList(!showHolidaysList)}
                 data-insightflare-event="holiday_list_toggle"
               >
@@ -161,11 +161,11 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
               </button>
               
               {showHolidaysList && (
-                <div className="bg-white/10 dark:bg-black/10 rounded-xl p-3 mb-4 max-h-60 overflow-y-auto">
+                <div className="bg-white/10 dark:bg-black/10 rounded-xl p-3 max-h-60 overflow-y-auto flex flex-col gap-2">
                   {holidaysList.map((holiday, index) => (
                     <button
                       key={index}
-                      className="w-full p-2 mb-2 rounded-lg flex items-center justify-between hover:bg-white/20 dark:hover:bg-black/20 transition-colors"
+                      className="w-full rounded-lg p-2 flex items-center justify-between hover:bg-white/20 dark:hover:bg-black/20 transition-colors"
                       onClick={() => handleSelectHoliday(holiday)}
                       data-insightflare-event="holiday_select"
                       data-insightflare-event-holiday={holiday.name}
@@ -181,7 +181,7 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
               )}
             </div>
             
-            <form className="space-y-4">
+            <form className="flex flex-col gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">{t('modal.countdown.name', '计时器名称')}</label>
                 <input
@@ -247,7 +247,7 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
               </div>
             </form>
             
-            <div className="mt-6 flex justify-between">
+            <div className="pt-6 flex justify-between">
               <Button
                 variant="glassSecondary"
                 onClick={onClose}
@@ -268,7 +268,7 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
         
         {step === 2 && (
           <>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center pb-6">
               <h2 className="text-2xl font-semibold">{t('modal.countdown.selectColor', '选择颜色')}</h2>
               <button
                 className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -285,13 +285,15 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
               ></div>
             </div>
             
-            <HexColorPicker 
-              color={formData.color} 
-              onChange={handleColorChange} 
-              className="w-full mb-6"
-            />
+            <div className="pb-6">
+              <HexColorPicker
+                color={formData.color}
+                onChange={handleColorChange}
+                className="w-full"
+              />
+            </div>
             
-            <div className="grid grid-cols-5 gap-2 mb-6">
+            <div className="grid grid-cols-5 gap-2">
               {presetColors.slice(0, 20).map(color => (
                 <button
                   key={color}
@@ -304,7 +306,7 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
               ))}
             </div>
             
-            <div className="mt-6 flex justify-between">
+            <div className="pt-6 flex justify-between">
               <Button
                 variant="glassSecondary"
                 onClick={() => setStep(1)}

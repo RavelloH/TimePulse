@@ -60,7 +60,7 @@ export default function UpdateToast() {
       transitionKey={showToast ? 'update-toast-open' : 'update-toast-closed'}
       initial={false}
       type="fade"
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[550] backdrop-blur-sm"
+      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-[550] backdrop-blur-sm"
       style={{ pointerEvents: showToast ? 'auto' : 'none' }}
       onClick={handleDismiss}
     >
@@ -70,7 +70,7 @@ export default function UpdateToast() {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="glass-card w-full max-w-md m-4 p-6 rounded-2xl"
+            className="glass-card w-full max-w-md p-6 rounded-2xl"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-between items-start mb-4">

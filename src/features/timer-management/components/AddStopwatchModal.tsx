@@ -89,14 +89,14 @@ export default function AddStopwatchModal({ onClose }: AddStopwatchModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto py-4"
+      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="glass-card w-full max-w-md m-4 p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
+        className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         <AutoResizer initial>
@@ -104,7 +104,7 @@ export default function AddStopwatchModal({ onClose }: AddStopwatchModalProps) {
         <>
         {step === 1 && (
           <>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center pb-6">
               <h2 className="text-2xl font-semibold">{t('modal.addStopwatch.create', '创建正计时')}</h2>
               <button
                 className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -114,7 +114,7 @@ export default function AddStopwatchModal({ onClose }: AddStopwatchModalProps) {
               </button>
             </div>
             
-            <form className="space-y-4">
+            <form className="flex flex-col gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">{t('modal.addStopwatch.timerName', '计时器名称')}</label>
                 <input
@@ -138,7 +138,7 @@ export default function AddStopwatchModal({ onClose }: AddStopwatchModalProps) {
               </div>
             </form>
             
-            <div className="mt-6 flex justify-between">
+            <div className="pt-6 flex justify-between">
               <button
                 className="btn-glass-secondary"
                 onClick={onClose}
@@ -159,7 +159,7 @@ export default function AddStopwatchModal({ onClose }: AddStopwatchModalProps) {
         
         {step === 2 && (
           <>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center pb-6">
               <h2 className="text-2xl font-semibold">{t('modal.addStopwatch.selectColor', '选择颜色')}</h2>
               <button
                 className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -176,13 +176,15 @@ export default function AddStopwatchModal({ onClose }: AddStopwatchModalProps) {
               ></div>
             </div>
             
-            <HexColorPicker 
-              color={formData.color} 
-              onChange={handleColorChange} 
-              className="w-full mb-6"
-            />
+            <div className="pb-6">
+              <HexColorPicker
+                color={formData.color}
+                onChange={handleColorChange}
+                className="w-full"
+              />
+            </div>
             
-            <div className="grid grid-cols-5 gap-2 mb-6">
+            <div className="grid grid-cols-5 gap-2">
               {stopwatchColors.map(color => (
                 <button
                   key={color}
@@ -195,7 +197,7 @@ export default function AddStopwatchModal({ onClose }: AddStopwatchModalProps) {
               ))}
             </div>
             
-            <div className="mt-6 flex justify-between">
+            <div className="pt-6 flex justify-between">
               <button
                 className="btn-glass-secondary"
                 onClick={() => setStep(1)}

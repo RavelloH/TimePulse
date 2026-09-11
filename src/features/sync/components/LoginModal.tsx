@@ -243,14 +243,14 @@ export default function LoginModal({ onClose }: LoginModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[600] backdrop-blur-sm overflow-y-auto py-4"
+      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-[600] backdrop-blur-sm overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="glass-card w-full max-w-md m-4 p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
+        className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
@@ -269,7 +269,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
           initial={false}
           type="crossFade"
         >
-        <div>
+        <div className="flow-root">
         {/* 离线状态提示 */}
         {isOffline && (
           <div className="mb-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg flex items-center">
@@ -291,7 +291,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
           </div>
         )}
         
-        <div className="mb-6">
+        <div className="pb-6">
           <p className="text-gray-600 dark:text-gray-300 mb-4">
             {t('login.description')}
           </p>
@@ -330,7 +330,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
           
           {/* 登录同步ID */}
           {status === 'idle' && showLogin && (
-            <form onSubmit={loadFromRemote} className="space-y-4">
+            <form onSubmit={loadFromRemote} className="flex flex-col gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">{t('login.syncId')}</label>
                 <input
@@ -369,7 +369,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
           
           {/* 显示同步信息 */}
           {(status === 'generated' || status === 'saved') && (
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">{t('login.yourSyncId', '您的同步ID')}</label>
                 <div className="flex">

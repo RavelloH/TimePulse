@@ -108,14 +108,14 @@ export default function AddWorldClockModal({ onClose }: AddWorldClockModalProps)
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto py-4"
+        className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto"
         onClick={onClose}
       >
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="glass-card w-full max-w-md m-4 p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
+          className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
           onClick={e => e.stopPropagation()}
         >
           <AutoResizer initial>
@@ -123,7 +123,7 @@ export default function AddWorldClockModal({ onClose }: AddWorldClockModalProps)
           <>
           {step === 1 && (
             <>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center pb-6">
               <h2 className="text-2xl font-semibold">{t('modal.addWorldClock.create', '创建世界时间')}</h2>
               <button
                 className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -131,9 +131,10 @@ export default function AddWorldClockModal({ onClose }: AddWorldClockModalProps)
               >
                 <FiX className="text-xl" />
               </button>
-            </div>              <div className="mb-6">
-                <button 
-                  className="w-full glass-card p-4 mb-4 text-left flex items-center hover:bg-white/10 dark:hover:bg-black/10"
+            </div>
+            <div className="pb-6">
+              <button
+                  className="w-full glass-card p-4 text-left flex items-center hover:bg-white/10 dark:hover:bg-black/10"
                   onClick={() => setShowTimezoneModal(true)}
                   data-insightflare-event="worldclock_open_picker"
                 >
@@ -144,7 +145,8 @@ export default function AddWorldClockModal({ onClose }: AddWorldClockModalProps)
               
               {formData.timezone && (
                 <>
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-4">
+                  <div className="pb-4">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                     <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
                       {t('modal.addWorldClock.selectedTimezone', '已选择时区')}
                     </h3>
@@ -154,8 +156,9 @@ export default function AddWorldClockModal({ onClose }: AddWorldClockModalProps)
                       <div className="text-xs text-gray-500">{formData.timezone}</div>
                     </div>
                   </div>
+                  </div>
                   
-                  <form className="space-y-4">
+                  <form className="flex flex-col gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-1">时间名称</label>
                       <input
@@ -172,7 +175,7 @@ export default function AddWorldClockModal({ onClose }: AddWorldClockModalProps)
                 </>
               )}
               
-              <div className="mt-6 flex justify-between">
+              <div className="pt-6 flex justify-between">
                 <button
                   className="btn-glass-secondary"
                   onClick={onClose}
@@ -195,7 +198,7 @@ export default function AddWorldClockModal({ onClose }: AddWorldClockModalProps)
           
           {step === 2 && (
             <>
-              <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center pb-6">
                 <h2 className="text-2xl font-semibold">{t('modal.addWorldClock.selectColor', '选择颜色')}</h2>
                 <button
                   className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -212,13 +215,15 @@ export default function AddWorldClockModal({ onClose }: AddWorldClockModalProps)
                 ></div>
               </div>
               
-              <HexColorPicker 
-                color={formData.color} 
-                onChange={handleColorChange} 
-                className="w-full mb-6"
+            <div className="pb-6">
+              <HexColorPicker
+                color={formData.color}
+                onChange={handleColorChange}
+                className="w-full"
               />
+            </div>
               
-              <div className="grid grid-cols-5 gap-2 mb-6">
+              <div className="grid grid-cols-5 gap-2">
                 {worldClockColors.map(color => (
                   <button
                     key={color}
@@ -231,7 +236,7 @@ export default function AddWorldClockModal({ onClose }: AddWorldClockModalProps)
                 ))}
               </div>
               
-              <div className="mt-6 flex justify-between">
+              <div className="pt-6 flex justify-between">
                 <button
                   className="btn-glass-secondary"
                   onClick={() => setStep(1)}

@@ -15,6 +15,7 @@ export type PageView = 'main' | 'about';
 type PageTransitionContextValue = {
   view: PageView;
   isAbout: boolean;
+  direction: 1 | -1;
   transitionTo: (view: PageView) => void;
 };
 
@@ -53,6 +54,7 @@ function isGestureIgnored(target: EventTarget | null): boolean {
 export function PageTransitionProvider({ children }: { children: ReactNode }) {
   const { isFullscreen } = useFullscreen();
   const [view, setView] = useState<PageView>(getInitialView);
+  const [direction, setDirection] = useState<1 | -1>(1);
   const viewRef = useRef<PageView>(view);
   const wheelTotalRef = useRef(0);
   const wheelResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -64,6 +66,7 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
   const transitionTo = useCallback((nextView: PageView) => {
     if (viewRef.current === nextView) return;
 
+    setDirection(nextView === 'about' ? 1 : -1);
     viewRef.current = nextView;
     setView(nextView);
 
@@ -188,7 +191,7 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
 
   return createElement(
     PageTransitionContext.Provider,
-    { value: { view, isAbout: view === 'about', transitionTo } },
+    { value: { view, isAbout: view === 'about', direction, transitionTo } },
     children,
   );
 }

@@ -317,14 +317,14 @@ export default function WorldClockSelectionModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto py-4"
+      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="glass-card w-full max-w-2xl m-4 p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
+        className="glass-card w-full max-w-2xl p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
@@ -342,8 +342,8 @@ export default function WorldClockSelectionModal({
         <>
         {!showAll && (
           <>
-            <h3 className="text-lg font-medium mb-4">{t('modal.addWorldClock.popularCities', '常用城市')}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6 overflow-x-hidden">
+            <h3 className="text-lg font-medium pb-4">{t('modal.addWorldClock.popularCities', '常用城市')}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-x-hidden">
               {popularWorldClocks.map((worldClock) => {
                 const translatedCity = getTranslatedCity(worldClock.name, worldClock.timezone);
                 const translatedCountry = getTranslatedCountry(worldClock.country);
@@ -391,7 +391,7 @@ export default function WorldClockSelectionModal({
 
         {showAll && (
           <>
-            <div className="mb-4">
+            <div className="pb-4">
               <div className="relative">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
@@ -430,7 +430,7 @@ export default function WorldClockSelectionModal({
               </div>
             </div>
 
-            <div className="mt-4 flex justify-center">
+            <div className="pt-4 flex justify-center">
               <button
                 className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
                 onClick={() => setShowAll(false)}
@@ -444,7 +444,7 @@ export default function WorldClockSelectionModal({
         </AutoTransition>
         </AutoResizer>
 
-        <div className="mt-6 flex justify-end">
+        <div className="pt-6 flex justify-end">
           <button
             className="btn-glass-secondary"
             onClick={onClose}

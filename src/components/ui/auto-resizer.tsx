@@ -1,5 +1,5 @@
 import { motion, type Easing } from 'framer-motion';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from './utils';
 
@@ -11,6 +11,7 @@ export interface AutoResizerProps {
   initial?: boolean;
   animateWidth?: boolean;
   animateHeight?: boolean;
+  overflow?: CSSProperties['overflow'];
 }
 
 export function AutoResizer({
@@ -21,6 +22,7 @@ export function AutoResizer({
   initial = false,
   animateWidth = false,
   animateHeight = true,
+  overflow = 'visible',
 }: AutoResizerProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const heightRef = useRef<number | 'auto'>(initial && animateHeight ? 0 : 'auto');
@@ -86,7 +88,7 @@ export function AutoResizer({
       style={{
         alignItems: animateWidth ? 'flex-start' : undefined,
         display: animateWidth ? 'inline-flex' : undefined,
-        overflow: 'hidden',
+        overflow,
       }}
       animate={{
         ...(animateHeight ? { height } : {}),
@@ -99,7 +101,11 @@ export function AutoResizer({
     >
       <div
         ref={contentRef}
-        style={animateWidth ? { display: 'inline-block', flexShrink: 0, width: 'max-content' } : undefined}
+        style={
+          animateWidth
+            ? { display: 'inline-block', flexShrink: 0, width: 'max-content' }
+            : { display: 'flow-root' }
+        }
       >
         {children}
       </div>

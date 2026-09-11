@@ -50,14 +50,14 @@ export default function FullscreenSettingsModal({ onClose }: FullscreenSettingsM
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto py-4"
+      className="fixed inset-0 bg-black/50 p-4 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="w-full max-w-md m-4 p-6 rounded-2xl bg-white/30 dark:bg-black/30 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-2xl"
+        className="w-full max-w-md p-6 rounded-2xl bg-white/30 dark:bg-black/30 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         {/* 标题栏 */}
@@ -72,6 +72,7 @@ export default function FullscreenSettingsModal({ onClose }: FullscreenSettingsM
         </div>
 
         {/* 成功提示 */}
+        <div className={success ? 'pb-4' : undefined}>
         <AutoResizer initial={false}>
         <AutoTransition transitionKey={success ? 'fullscreen-success' : 'fullscreen-no-success'} initial={false} type="slideDown">
           {success ? (
@@ -79,13 +80,14 @@ export default function FullscreenSettingsModal({ onClose }: FullscreenSettingsM
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="mb-4 p-3 bg-green-100/80 dark:bg-green-900/30 backdrop-blur-sm text-green-600 dark:text-green-400 rounded-lg border border-green-200/50 dark:border-green-800/30"
+              className="p-3 bg-green-100/80 dark:bg-green-900/30 backdrop-blur-sm text-green-600 dark:text-green-400 rounded-lg border border-green-200/50 dark:border-green-800/30"
             >
               已恢复默认设置
             </motion.div>
           ) : null}
         </AutoTransition>
         </AutoResizer>
+        </div>
 
         <div className="space-y-6">
           {/* 计时器字体大小 */}

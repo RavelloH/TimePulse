@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { ChangeEvent, MouseEvent as ReactMouseEvent } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { FiMenu, FiX, FiSettings, FiMoon, FiSun, FiUser, FiMaximize, FiMinimize, FiEdit, FiSave, FiGlobe, FiPlus, FiShare2, FiImage } from 'react-icons/fi';
 import type { Timer, TimerType } from '@/domain/timer';
 import { useTimers } from '@/app/providers/TimerProvider';
@@ -319,15 +319,14 @@ export default function Header() {
       </nav>
 
       {/* 移动端下拉菜单 - 同样使用计时器的颜色和动画效果 */}
-      <AutoTransition transitionKey={isMenuOpen ? 'mobile-menu-open' : 'mobile-menu-closed'} initial={false} type="slideDown">
+      <AnimatePresence>
         {isMenuOpen ? (
-          <AutoResizer initial>
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="glass-card mx-4 mt-2 p-4 md:hidden max-h-[70vh] overflow-y-auto"
-            >
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="glass-card mx-4 mt-2 p-4 md:hidden max-h-[70vh] overflow-y-auto"
+          >
             {/* 功能按钮区域 - 分两行，每行两个，放在上面 */}
             <div className="mb-4">
               <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">{t('header.functions')}</h3>
@@ -456,7 +455,7 @@ export default function Header() {
             {timers.length > 0 && (
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                 <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('header.timers')}</h3>
-                <div className="flex flex-col space-y-2 max-h-48 overflow-y-auto">
+                <div className="flex max-h-48 flex-col gap-2 overflow-y-auto">
                   {timers.map(timer => (
                     <motion.button
                       key={timer.id}
@@ -487,10 +486,9 @@ export default function Header() {
                 </div>
               </div>
             )}
-            </motion.div>
-          </AutoResizer>
+          </motion.div>
         ) : null}
-      </AutoTransition>
+      </AnimatePresence>
 
       {/* 管理计时器弹窗 */}
       <AutoTransition portal transitionKey={isManageOpen ? 'manage-open' : 'manage-closed'} initial={false} type="fade">
@@ -499,7 +497,7 @@ export default function Header() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto py-4"
+            className="fixed inset-0 bg-black/50 p-4 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto"
             onClick={() => {
               setIsManageOpen(false);
               setEditingTimer(null);
@@ -512,7 +510,7 @@ export default function Header() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card w-full max-w-md m-4 p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
+              className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
               onClick={(e: ReactMouseEvent<HTMLDivElement>) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-4">
@@ -534,8 +532,8 @@ export default function Header() {
               <AutoResizer initial={false}>
               <AutoTransition transitionKey={editingTimer ? `editing-${editingTimer.id}` : 'timer-list'} initial={false} type="slide">
               {editingTimer ? (
-                <div className="space-y-4">
-                  <h3 className="font-medium mb-2">
+                <div className="flex flex-col gap-4">
+                  <h3 className="font-medium pb-2">
                     {editingTimer.isLimitedEdit ? t('modal.edit.editTimer') : t('modal.edit.editCountdown')}
                   </h3>
                   
@@ -582,7 +580,7 @@ export default function Header() {
                       onClick={() => setShowColorPicker(!showColorPicker)}
                     ></div>
                     {showColorPicker && (
-                      <div className="mt-2">
+                      <div className="pt-2">
                         <HexColorPicker 
                           color={editingTimer.color} 
                           onChange={(color) => setEditingTimer({...editingTimer, color})} 
@@ -610,11 +608,11 @@ export default function Header() {
                   </div>
                 </div>
               ) : (
-                <div className="max-h-96 overflow-y-auto">
+                <div className="flex max-h-96 flex-col gap-2 overflow-y-auto">
                   {timers.map(timer => (
                     <div 
                       key={timer.id}
-                      className="flex items-center justify-between p-3 mb-2 rounded-lg bg-white/30 dark:bg-black/30 hover:bg-white/50 dark:hover:bg-black/50"
+                      className="flex items-center justify-between rounded-lg bg-white/30 p-3 hover:bg-white/50 dark:bg-black/30 dark:hover:bg-black/50"
                       style={{
                         borderLeft: `4px solid ${timer.color || '#0ea5e9'}`
                       }}

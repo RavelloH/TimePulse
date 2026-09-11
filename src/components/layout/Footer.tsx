@@ -179,7 +179,8 @@ export default function Footer() {
         </div>
         
         {/* 离线模式提示 - 位于页脚中间，使用低调样式 */}
-        <AutoResizer className="mt-3 md:mt-4 text-center opacity-70 flex flex-col items-center space-y-1" initial={false}>
+        <div className="pt-3 md:pt-4">
+        <AutoResizer className="text-center opacity-70 flex flex-col items-center gap-1" initial={false}>
           <AutoTransition transitionKey={isOffline ? 'offline' : 'online'} initial={false} type="slideDown">
             {isOffline ? (
               <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center">
@@ -211,6 +212,7 @@ export default function Footer() {
             </AutoTransition>
           </div>
         </AutoResizer>
+        </div>
         
         <div className="mt-3 md:mt-4 pt-2 border-t border-gray-300 dark:border-white/10 text-center text-xs text-gray-600 dark:text-gray-300">
           <p>

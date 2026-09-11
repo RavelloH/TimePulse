@@ -1,3 +1,7 @@
 node_modules
 .next
+dist
+out
 .vscode
+test-results
+playwright-report

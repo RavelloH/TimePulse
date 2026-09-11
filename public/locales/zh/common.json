@@ -209,7 +209,7 @@
     "updateCache": "更新应用缓存",
     "updateCacheText": "更新缓存",
     "lastUpdate": "上次更新",
-    "builtWith": "使用 Next.js 和 Framer Motion 构建",
+    "builtWith": "使用 Vite 和 Framer Motion 构建",
     "about": "关于 TimePulse",
     "scrollDown": "向下滑动查看更多信息"
   },

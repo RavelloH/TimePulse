@@ -209,7 +209,7 @@
     "updateCache": "Update application cache",
     "updateCacheText": "Update Cache",
     "lastUpdate": "Last update",
-    "builtWith": "Built with Next.js and Framer Motion",
+    "builtWith": "Built with Vite and Framer Motion",
     "about": "About TimePulse",
     "scrollDown": "Scroll down to view more information"
   },

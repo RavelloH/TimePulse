@@ -1,5 +1,5 @@
 // 使用时间戳作为缓存版本，确保每次部署都会更新
-const CACHE_VERSION = "v1.3"; // 手动更新此版本号以强制清除所有缓存
+const CACHE_VERSION = "v1.4"; // Vite 切换版本：清理旧 Next 静态资源
 const CACHE_NAME = `timepulse-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `timepulse-runtime-${CACHE_VERSION}`;
 

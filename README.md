@@ -39,14 +39,16 @@ TimePulse 是一个具有现代化 UI 和交互的计时器网页应用，支持
 
 ## 技术栈
 
-- Next.js - React 框架
+- Vite - 前端构建工具
+- React + TypeScript - 类型安全的 UI 开发
+- Radix UI / shadcn 风格源码组件 - 可维护的交互原语
 - Framer Motion - 高级动画库
 - Tailwind CSS - 实用工具优先的 CSS 框架
 - localStorage - 本地数据持久化
 - [KV Cache](https://github.com/RavelloH/kv-cache) - 云端数据存储服务
 
 ## 快速开始
-> 作为Nextjs纯前端项目，可以在任何支持托管Next.js(或Nodejs)的平台上部署。
+> 作为 Vite 构建的纯前端项目，可以在任何静态托管服务上部署。
 >
 > 另外，你也可以下载 [Releases](https://github.com/RavelloH/TimePulse/releases) 中的静态预构建资源（形如site-vx.x.x.zip），将其部署在Github Pages、Cloudflare Pages或其他任何静态托管服务商上
 

@@ -115,7 +115,7 @@ export default function Home() {
                 className={`relative flex h-full min-h-0 flex-col items-center justify-center ${isFullscreen ? '' : 'py-12'}`}
                 data-page-view="main"
               >
-                <AutoResizer className="w-full" initial={false} overflow="visible">
+                <AutoResizer className="flex w-full items-center justify-center" initial={false} overflow="visible">
                   <TimerDisplay />
                 </AutoResizer>
               </main>

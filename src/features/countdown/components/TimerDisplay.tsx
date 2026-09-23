@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { Fragment, useState, useEffect, useRef, type ReactNode } from 'react';
+import { LayoutGroup, motion } from 'framer-motion';
 import { useTimers } from '@/app/providers/TimerProvider';
 import { useFullscreen } from '@/app/providers/FullscreenProvider';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -14,10 +14,12 @@ import {
   type Lap,
   type StopwatchTimer,
   type Timer,
+  type TimerType,
   type TimeValue,
   type WorldClockTimer,
 } from '@/domain/timer';
-import { AutoResizer, AutoTransition } from '@/components/ui';
+import { getNextTimerUpdateDelay } from '../timerSchedule';
+import { AutoResizer, AutoTransition, type TransitionType } from '@/components/ui';
 
 type DisplayTime = {
   years: number;
@@ -36,6 +38,38 @@ const toDate = (value: TimeValue | null | undefined): Date => {
   return new Date(value ?? Number.NaN);
 };
 
+type AnimatedRegionProps = {
+  children: ReactNode;
+  transitionKey: string;
+  type?: TransitionType;
+  className?: string;
+};
+
+function AnimatedRegion({
+  children,
+  transitionKey,
+  type = 'crossFade',
+  className,
+}: AnimatedRegionProps) {
+  return (
+    <AutoResizer
+      animateWidth
+      initial={false}
+      overflow="visible"
+      className="flex items-center justify-center"
+    >
+      <AutoTransition
+        transitionKey={transitionKey}
+        initial={false}
+        type={type}
+        className={className}
+      >
+        {children}
+      </AutoTransition>
+    </AutoResizer>
+  );
+}
+
 export default function TimerDisplay() {
   const { getActiveTimer, updateTimer, checkAndUpdateDefaultTimer } = useTimers();
   const { isFullscreen, timerFontSize: rawTimerFontSize, labelFontSize: rawLabelFontSize } = useFullscreen();
@@ -43,6 +77,8 @@ export default function TimerDisplay() {
   const timerFontSize = (rawTimerFontSize || 'medium') as FontSize;
   const labelFontSize = (rawLabelFontSize || 'medium') as FontSize;
   const [timeValue, setTimeValue] = useState<DisplayTime>({ years: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [isInitialValuesReady, setIsInitialValuesReady] = useState(false);
+  const [isDisplayVisible, setIsDisplayVisible] = useState(false);
   const [showDays, setShowDays] = useState(true);
   const [showYears, setShowYears] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
@@ -50,78 +86,23 @@ export default function TimerDisplay() {
   const [isLapModalOpen, setIsLapModalOpen] = useState(false);
   
   // 使用 ref 跟踪最后计算的时间，避免不必要的重渲染
-  const lastTimeRef = useRef<DisplayTime>({ years: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const timerIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const syncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null); // 高频同步定时器
-  const pausedTimeRef = useRef(0); // 记录已暂停的总时间
-  const lastSecondRef = useRef(-1); // 记录上一次的秒数
+  const lastTimeRef = useRef<DisplayTime | null>(null);
+  const activeTimerIdentityRef = useRef<{ id: string; type: TimerType } | null>(null);
+  const initialValuesReadyRef = useRef(false);
+  const timerIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // 判断两个时间对象是否相等
-  const areTimesEqual = (time1: DisplayTime, time2: DisplayTime) => {
-    return time1.years === time2.years &&
+  const areTimesEqual = (time1: DisplayTime, time2: DisplayTime | null) => {
+    return time2 !== null &&
+           time1.years === time2.years &&
            time1.days === time2.days && 
            time1.hours === time2.hours && 
            time1.minutes === time2.minutes && 
            time1.seconds === time2.seconds;
   };
 
-  // 自动对时系统 - 高精度时间同步
-  const startTimeSyncSystem = () => {
-    // 清除现有的定时器
-    if (syncTimerRef.current) {
-      clearInterval(syncTimerRef.current ?? undefined);
-    }
-    if (timerIdRef.current) {
-      clearInterval(timerIdRef.current ?? undefined);
-    }
-    
-    // 只在页面可见时启动高频检测
-    if (document.visibilityState !== 'visible') {
-      return;
-    }
-    
-    // 获取当前秒数作为基准
-    const now = new Date();
-    lastSecondRef.current = now.getSeconds();
-    
-    // 启动高频检测（每毫秒检测一次）
-    syncTimerRef.current = setInterval(() => {
-      // 检查页面可见性
-      if (document.visibilityState !== 'visible') {
-        clearInterval(syncTimerRef.current ?? undefined);
-        clearInterval(timerIdRef.current ?? undefined);
-        return;
-      }
-      
-      const currentTime = new Date();
-      const currentSecond = currentTime.getSeconds();
-      
-      // 检测秒数是否发生变化
-      if (currentSecond !== lastSecondRef.current) {
-        lastSecondRef.current = currentSecond;
-        
-        // 清除高频检测，因为我们已经同步到秒数变化了
-        clearInterval(syncTimerRef.current ?? undefined);
-        
-        // 秒数变化时立即执行一次主进程
-        const timer = getActiveTimer() as Timer | null;
-        if (timer) {
-          calculateTime(timer);
-        }
-        
-        // 设置循环间隔1000ms运行主进程
-        timerIdRef.current = setInterval(() => {
-          const activeTimer = getActiveTimer() as Timer | null;
-          if (activeTimer && document.visibilityState === 'visible') {
-            calculateTime(activeTimer);
-          }
-        }, 1000);
-      }
-    }, 1);
-  };
-  
   // 统一的计时计算函数
-  const calculateTime = (timer: Timer) => {
+  const calculateTime = (timer: Timer, now: number, timerChanged: boolean) => {
     // 当页面在后台时，可能会暂停
     if (document.visibilityState !== 'visible') {
       return;
@@ -129,13 +110,13 @@ export default function TimerDisplay() {
     
     switch (getTimerType(timer)) {
       case 'stopwatch':
-        calculateStopwatchTime(timer as StopwatchTimer);
+        calculateStopwatchTime(timer as StopwatchTimer, now);
         break;
       case 'worldclock':
-        calculateWorldClockTime(timer as WorldClockTimer);
+        calculateWorldClockTime(timer as WorldClockTimer, now);
         break;
       default:
-        calculateCountdownTime(timer as CountdownTimer);
+        calculateCountdownTime(timer as CountdownTimer, now, timerChanged);
         break;
     }
   };
@@ -150,10 +131,9 @@ export default function TimerDisplay() {
   };
   
   // 计算倒计时剩余时间
-  const calculateCountdownTime = (timer: CountdownTimer) => {
-    const now = new Date();
+  const calculateCountdownTime = (timer: CountdownTimer, now: number, timerChanged: boolean) => {
     const targetDate = toDate(timer.targetDate);
-    const difference = targetDate.getTime() - now.getTime();
+    const difference = targetDate.getTime() - now;
     
     if (difference <= 0) {
       // 倒计时结束
@@ -189,6 +169,13 @@ export default function TimerDisplay() {
           console.error('发送倒计时结束通知失败:', error);
         }
       }
+
+      if (timerChanged) {
+        setTimeValue({ years: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
+        lastTimeRef.current = { years: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+        setShowYears(false);
+        setShowDays(false);
+      }
       return;
     }
     
@@ -217,14 +204,13 @@ export default function TimerDisplay() {
   };
   
   // 计算正计时经过时间
-  const calculateStopwatchTime = (timer: StopwatchTimer) => {
-    const now = new Date();
+  const calculateStopwatchTime = (timer: StopwatchTimer, now: number) => {
     const startTime = toDate(timer.startTime);
     let elapsedMs = 0;
     
     if (timer.isRunning) {
       // 正在运行中
-      elapsedMs = now.getTime() - startTime.getTime() - (timer.totalPausedTime || 0);
+      elapsedMs = now - startTime.getTime() - (timer.totalPausedTime || 0);
     } else if (timer.pausedAt) {
       // 已暂停，显示暂停时的时间
       const pausedAt = toDate(timer.pausedAt);
@@ -250,7 +236,7 @@ export default function TimerDisplay() {
     // 对于正计时，我们特别处理避免不必要的重新渲染
     if (!areTimesEqual(newTimeValue, lastTimeRef.current)) {
       // 如果只是秒数变化，我们延迟更新其他数字避免闪烁
-      if (timer.type === 'stopwatch' && isOnlySecondsChanged(newTimeValue, lastTimeRef.current)) {
+      if (timer.type === 'stopwatch' && lastTimeRef.current && isOnlySecondsChanged(newTimeValue, lastTimeRef.current)) {
         // 只更新秒数
         setTimeValue(prev => ({ ...prev, seconds }));
       } else {
@@ -264,9 +250,8 @@ export default function TimerDisplay() {
   };
   
   // 计算世界时钟时间
-  const calculateWorldClockTime = (timer: WorldClockTimer) => {
-    const now = new Date();
-    const timeInTimezone = new Date(now.toLocaleString("en-US", {timeZone: timer.timezone}));
+  const calculateWorldClockTime = (timer: WorldClockTimer, now: number) => {
+    const timeInTimezone = new Date(new Date(now).toLocaleString("en-US", {timeZone: timer.timezone}));
     
     const hours = timeInTimezone.getHours();
     const minutes = timeInTimezone.getMinutes();
@@ -290,48 +275,57 @@ export default function TimerDisplay() {
   
   // 主计时逻辑
   useEffect(() => {
-    // 清除之前的定时器
-    if (timerIdRef.current) {
-      clearInterval(timerIdRef.current ?? undefined);
-    }
-    if (syncTimerRef.current) {
-      clearInterval(syncTimerRef.current ?? undefined);
-    }
-    
-    const timer = getActiveTimer() as Timer | null;
-    if (!timer) return;
-    
-    // 设置初始运行状态
-    if (timer.type === 'stopwatch') {
-      setIsRunning(timer.isRunning === true);
-      pausedTimeRef.current = timer.totalPausedTime || 0;
-    }
-    
-    // 步骤1：刚打开页面/切换计时器时，执行一次主进程
-    calculateTime(timer);
-    
-    // 步骤2：然后开始高频检测
-    startTimeSyncSystem();
-    
-    // 处理页面可见性变化
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // 页面重新可见时，重新执行步骤1和2
-        const activeTimer = getActiveTimer() as Timer | null;
-        if (activeTimer) {
-          // 步骤1：执行一次主进程
-          calculateTime(activeTimer);
-          // 步骤2：开始高频检测
-          startTimeSyncSystem();
-        }
+    const clearScheduledUpdate = () => {
+      if (timerIdRef.current !== null) {
+        clearTimeout(timerIdRef.current);
+        timerIdRef.current = null;
       }
     };
-    
+
+    const updateActiveTimer = () => {
+      clearScheduledUpdate();
+      if (document.visibilityState !== 'visible') return;
+
+      const timer = getActiveTimer() as Timer | null;
+      if (!timer) return;
+
+      const timerType = getTimerType(timer);
+      const previousIdentity = activeTimerIdentityRef.current;
+      const timerChanged = !previousIdentity || previousIdentity.id !== timer.id || previousIdentity.type !== timerType;
+      if (timerChanged) {
+        activeTimerIdentityRef.current = { id: timer.id, type: timerType };
+        // Keep timeValue for NumberFlow's old-to-new animation, but make the
+        // next calculation refresh all timer-specific display fields.
+        lastTimeRef.current = null;
+        setIsLapModalOpen(false);
+        setIsRunning(timerType === 'stopwatch' && (timer as StopwatchTimer).isRunning === true);
+        if (timerType !== 'countdown') setIsFinished(false);
+      }
+
+      // Use one timestamp for both the displayed value and its next boundary.
+      const now = Date.now();
+      calculateTime(timer, now, timerChanged);
+      if (!initialValuesReadyRef.current) {
+        initialValuesReadyRef.current = true;
+        setIsInitialValuesReady(true);
+      }
+      timerIdRef.current = setTimeout(updateActiveTimer, getNextTimerUpdateDelay(timer, now));
+    };
+
+    updateActiveTimer();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        updateActiveTimer();
+      } else {
+        clearScheduledUpdate();
+      }
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
-      clearInterval(timerIdRef.current ?? undefined);
-      clearInterval(syncTimerRef.current ?? undefined);
+      clearScheduledUpdate();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [getActiveTimer, isFinished, checkAndUpdateDefaultTimer, isRunning]);
@@ -409,15 +403,29 @@ export default function TimerDisplay() {
     }
   };
   
-  // 格式化为两位数
-  const formatNumber = (num: number) => {
-    return num.toString().padStart(2, '0');
-  };
-  
   const activeTimer = getActiveTimer() as Timer | null;
+  const activeTimerType = activeTimer ? getTimerType(activeTimer) : null;
+  const numberTrend: -1 | 1 = activeTimerType === 'countdown' ? -1 : 1;
   const activeStopwatchTimer = activeTimer?.type === 'stopwatch'
     ? activeTimer as StopwatchTimer
     : null;
+
+  useEffect(() => {
+    if (!isInitialValuesReady || isDisplayVisible || !activeTimer) return undefined;
+
+    // Let the timer-specific rows and AutoResizer measurements settle first.
+    const revealTimer = window.setTimeout(() => setIsDisplayVisible(true), 400);
+    return () => window.clearTimeout(revealTimer);
+  }, [
+    isInitialValuesReady,
+    isDisplayVisible,
+    activeTimer?.id,
+    activeTimerType,
+    showYears,
+    showDays,
+    isFinished,
+    isRunning,
+  ]);
 
   // 字体大小映射
   const getTimerFontSizeClasses = (): Record<FontSize, string> => {
@@ -483,219 +491,303 @@ export default function TimerDisplay() {
   return (
     <motion.div 
       className="flex flex-col items-center justify-center text-center px-4 relative z-10"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      key={activeTimer.id}
+      initial={{ opacity: 0, scale: 0.96, y: 24 }}
+      animate={isDisplayVisible
+        ? { opacity: 1, scale: 1, y: 0 }
+        : { opacity: 0, scale: 0.96, y: 24 }}
+      transition={{ duration: 0.42, ease: 'easeOut' }}
+      aria-hidden={!isDisplayVisible}
+      inert={!isDisplayVisible}
     >
+      <div className="relative flex flex-col items-center">
       {/* 计时器名称 */}
-      <motion.h2
-        className={`${isFullscreen ? 'text-3xl md:text-4xl' : 'text-xl sm:text-2xl md:text-3xl'} font-medium mb-4`}
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        style={{
-          color: activeTimer.color,
-          transition: 'color 0.3s var(--transition-timing)'
-        }}
+      <AnimatedRegion
+        transitionKey={`title:${activeTimer.id}:${activeTimer.type}:${getTimerTitle()}`}
+        className="pb-4"
       >
-        {getTimerTitle()}
-      </motion.h2>
+        <motion.h2
+          className={`${isFullscreen ? 'text-3xl md:text-4xl' : 'text-xl sm:text-2xl md:text-3xl'} font-medium`}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          style={{
+            color: activeTimer.color,
+            transition: 'color 0.3s var(--transition-timing)'
+          }}
+        >
+          {getTimerTitle()}
+        </motion.h2>
+      </AnimatedRegion>
       
       {/* 时间显示 */}
+      <LayoutGroup id="timer-display-numeric-layout">
       <AutoResizer
-        animateWidth
+        animateWidth={isInitialValuesReady}
         initial={false}
         overflow="visible"
         className="flex items-center justify-center"
       >
       <motion.div 
         className={`flex items-center justify-center ${showYears ? 'flex-col sm:flex-row gap-2 sm:gap-0' : 'flex-row'} space-x-0 sm:space-x-4`}
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
+        layout="position"
+        transition={{
+          duration: 0.32,
+          ease: 'easeOut',
+          layout: { type: 'tween', duration: 0.24, ease: 'easeOut' },
+        }}
       >
         {/* 第一行：年数和天数 - 仅在需要时显示 */}
-        {showYears && (
-          <div className="flex items-center justify-center space-x-2 sm:space-x-4">
+        <AutoTransition
+          transitionKey={showYears ? 'years-visible' : 'years-hidden'}
+          initial={false}
+          type="fade"
+          className="flex items-center justify-center space-x-2 sm:space-x-4"
+        >
+          {showYears ? (
+            <Fragment key="years-row">
             <DigitColumn
-              value={formatNumber(timeValue.years)}
+              key="years"
+              value={timeValue.years}
+              isValueVisible={isDisplayVisible}
+              trend={numberTrend}
               label={t('time.years')}
               color={activeTimer.color || '#0ea5e9'}
               fontSize={timerFontSize}
               labelFontSize={labelFontSize}
             />
-            <span className={`${timerClasses[timerFontSize]} font-thin text-gray-400`}>:</span>
-            {showDays && (
-              <>
+            <motion.span
+              key="years-separator"
+              layout="position"
+              transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
+              className={`${timerClasses[timerFontSize]} font-thin text-gray-400`}
+            >:</motion.span>
+            <AutoTransition
+              transitionKey={showDays ? 'days-visible-with-years' : 'days-hidden-with-years'}
+              initial={false}
+              type="fade"
+              className="flex items-center justify-center space-x-2 sm:space-x-4"
+            >
+              {showDays ? (
+                <Fragment key="days">
                 <DigitColumn
-                  value={formatNumber(timeValue.days)}
+                  key="days"
+                  value={timeValue.days}
+                  isValueVisible={isDisplayVisible}
+                  trend={numberTrend}
                   label={t('time.days')}
                   color={activeTimer.color || '#0ea5e9'}
                   fontSize={timerFontSize}
                   labelFontSize={labelFontSize}
                 />
-                <span className="text-4xl sm:text-5xl md:text-6xl font-thin text-gray-400 hidden sm:inline">:</span>
-              </>
-            )}
-          </div>
-        )}
-        
+                <motion.span
+                  key="days-separator"
+                  layout="position"
+                  transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
+                  className="text-4xl sm:text-5xl md:text-6xl font-thin text-gray-400 hidden sm:inline"
+                >:</motion.span>
+                </Fragment>
+              ) : null}
+            </AutoTransition>
+            </Fragment>
+          ) : null}
+        </AutoTransition>
+
         {/* 第二行：天数（当没有年数时）、小时、分钟、秒 */}
-        <div className="flex items-center justify-center space-x-2 sm:space-x-4">
+        <motion.div
+          key="clock-row"
+          layout="position"
+          transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
+          className="flex items-center justify-center space-x-2 sm:space-x-4"
+        >
           {/* 天数 - 仅在没有年数且需要时显示 */}
-          {!showYears && showDays && (
-            <>
+          <AutoTransition
+            transitionKey={!showYears && showDays ? 'days-visible-without-years' : 'days-hidden-without-years'}
+            initial={false}
+            type="fade"
+            className="flex items-center justify-center space-x-2 sm:space-x-4"
+          >
+            {!showYears && showDays ? (
+              <Fragment key="days">
               <DigitColumn
-                value={formatNumber(timeValue.days)}
+                key="days"
+                value={timeValue.days}
+                isValueVisible={isDisplayVisible}
+                trend={numberTrend}
                 label={t('time.days')}
                 color={activeTimer.color || '#0ea5e9'}
                 fontSize={timerFontSize}
                 labelFontSize={labelFontSize}
               />
-              <span className={`${timerClasses[timerFontSize]} font-thin text-gray-400`}>:</span>
-            </>
-          )}
-          
+              <motion.span
+                key="days-separator"
+                layout="position"
+                transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
+                className={`${timerClasses[timerFontSize]} font-thin text-gray-400`}
+              >:</motion.span>
+              </Fragment>
+            ) : null}
+          </AutoTransition>
+
           {/* 小时 */}
           <DigitColumn
-            value={formatNumber(timeValue.hours)}
+            key="hours"
+            value={timeValue.hours}
+            isValueVisible={isDisplayVisible}
+            trend={numberTrend}
             label={t('time.hours')}
             color={activeTimer.color || '#0ea5e9'}
             fontSize={timerFontSize}
             labelFontSize={labelFontSize}
           />
-          <span className="text-4xl sm:text-5xl md:text-6xl font-thin text-gray-400">:</span>
+          <motion.span
+            key="hours-separator"
+            layout="position"
+            transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
+            className="text-4xl sm:text-5xl md:text-6xl font-thin text-gray-400"
+          >:</motion.span>
           
           {/* 分钟 */}
           <DigitColumn
-            value={formatNumber(timeValue.minutes)}
+            key="minutes"
+            value={timeValue.minutes}
+            isValueVisible={isDisplayVisible}
+            trend={numberTrend}
+            cycleAtSixty
             label={t('time.minutes')}
             color={activeTimer.color || '#0ea5e9'}
             fontSize={timerFontSize}
             labelFontSize={labelFontSize}
           />
-          <span className="text-4xl sm:text-5xl md:text-6xl font-thin text-gray-400">:</span>
+          <motion.span
+            key="minutes-separator"
+            layout="position"
+            transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
+            className="text-4xl sm:text-5xl md:text-6xl font-thin text-gray-400"
+          >:</motion.span>
           
           {/* 秒 */}
           <DigitColumn
-            value={formatNumber(timeValue.seconds)}
+            key="seconds"
+            value={timeValue.seconds}
+            isValueVisible={isDisplayVisible}
+            trend={numberTrend}
+            cycleAtSixty
             label={t('time.seconds')}
             color={activeTimer.color || '#0ea5e9'}
             fontSize={timerFontSize}
             labelFontSize={labelFontSize}
           />
-        </div>
+        </motion.div>
       </motion.div>
       </AutoResizer>
+      </LayoutGroup>
       
-      {/* 正计时控制按钮 */}
-      <AutoTransition transitionKey={activeTimer.type === 'stopwatch' ? 'stopwatch-controls' : 'no-stopwatch-controls'} initial={false} type="slideUp">
-      {activeTimer.type === 'stopwatch' ? (
-        <motion.div 
-          className="mt-8 flex space-x-4 relative"
-          style={{ 
-            zIndex: 40,
-            pointerEvents: 'auto'
-          }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+      <div className="absolute left-1/2 top-full z-20 flex -translate-x-1/2 flex-col items-center whitespace-nowrap">
+        {/* Lower content animates in its own overlay and is excluded from the centered core's measured height. */}
+        <AnimatedRegion
+          transitionKey={`controls:${activeTimer.id}:${activeTimer.type === 'stopwatch' ? 'stopwatch' : 'none'}`}
+          type="slideUp"
+          className="pt-8"
         >
-          <button
-            onClick={() => handleStopwatchControl(isRunning ? 'pause' : 'play')}
-            className="glass-card p-4 rounded-full hover:bg-white/10 dark:hover:bg-black/10 transition-colors cursor-pointer select-none"
-            style={{ 
-              color: activeTimer.color,
-              zIndex: 41,
-              position: 'relative',
-              pointerEvents: 'auto',
-              userSelect: 'none'
-            }}
-          >
-            {isRunning ? <FiPause className="text-xl pointer-events-none" /> : <FiPlay className="text-xl pointer-events-none" />}
-          </button>
-          <button
-            onClick={() => handleStopwatchControl('lap')}
-            disabled={!isRunning}
-            className="glass-card p-4 rounded-full hover:bg-white/10 dark:hover:bg-black/10 transition-colors cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ 
-              color: activeTimer.color,
-              zIndex: 41,
-              position: 'relative',
-              pointerEvents: 'auto',
-              userSelect: 'none'
-            }}
-          >
-            <FiFlag className="text-xl pointer-events-none" />
-          </button>
-          <button
-            onClick={() => handleStopwatchControl('stop')}
-            className="glass-card p-4 rounded-full hover:bg-white/10 dark:hover:bg-black/10 transition-colors cursor-pointer select-none"
-            style={{ 
-              color: activeTimer.color,
-              zIndex: 41,
-              position: 'relative',
-              pointerEvents: 'auto',
-              userSelect: 'none'
-            }}
-          >
-            <FiSquare className="text-xl pointer-events-none" />
-          </button>
-        </motion.div>
-      ) : null}
-      </AutoTransition>
-      
-      {/* 倒计时结束提示 */}
-      <AutoTransition transitionKey={isFinished && activeTimer.type === 'countdown' ? 'countdown-finished' : 'countdown-running'} initial={false} type="scale">
-        {isFinished && activeTimer.type === 'countdown' ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="mt-8 glass-card px-6 py-4 rounded-xl"
-          >
-            <p className="text-lg font-medium text-gray-800 dark:text-gray-200">
-              {t('timer.finished')}
-            </p>
-          </motion.div>
-        ) : null}
-      </AutoTransition>
-      
-      {/* 描述信息 */}
-      <motion.p 
-        className="mt-6 text-sm text-gray-500 dark:text-gray-400"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-      >
-        {getTimerDescription()}
-      </motion.p>
-      
-      {/* 分段计时按钮 */}
-      <AutoTransition transitionKey={activeStopwatchTimer?.laps?.length ? `laps-${activeStopwatchTimer.laps.length}` : 'no-laps'} initial={false} type="slideUp">
-      {activeStopwatchTimer && activeStopwatchTimer.laps && activeStopwatchTimer.laps.length > 0 ? (
-        <motion.button
-          className="mt-6 glass-card px-6 py-3 rounded-xl hover:bg-white/10 dark:hover:bg-black/10 transition-colors cursor-pointer"
-          style={{ 
-            color: activeTimer.color,
-            zIndex: 10,
-            position: 'relative',
-            pointerEvents: 'auto'
-          }}
-          onClick={() => { setIsLapModalOpen(true); track('lap_modal_open'); }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          {activeTimer.type === 'stopwatch' ? (
+            <motion.div
+              className="flex space-x-4 relative"
+              style={{ zIndex: 40, pointerEvents: 'auto' }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <AutoTransition
+                transitionKey={isRunning ? 'stopwatch-pause-control' : 'stopwatch-play-control'}
+                initial={false}
+                type="crossFade"
+                className="flex items-center justify-center"
+              >
+                <button
+                  onClick={() => handleStopwatchControl(isRunning ? 'pause' : 'play')}
+                  className="glass-card p-4 rounded-full hover:bg-white/10 dark:hover:bg-black/10 transition-colors cursor-pointer select-none"
+                  style={{ color: activeTimer.color, zIndex: 41, position: 'relative', pointerEvents: 'auto', userSelect: 'none' }}
+                >
+                  {isRunning ? <FiPause className="text-xl pointer-events-none" /> : <FiPlay className="text-xl pointer-events-none" />}
+                </button>
+              </AutoTransition>
+              <button
+                onClick={() => handleStopwatchControl('lap')}
+                disabled={!isRunning}
+                className="glass-card p-4 rounded-full hover:bg-white/10 dark:hover:bg-black/10 transition-colors cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ color: activeTimer.color, zIndex: 41, position: 'relative', pointerEvents: 'auto', userSelect: 'none' }}
+              >
+                <FiFlag className="text-xl pointer-events-none" />
+              </button>
+              <button
+                onClick={() => handleStopwatchControl('stop')}
+                className="glass-card p-4 rounded-full hover:bg-white/10 dark:hover:bg-black/10 transition-colors cursor-pointer select-none"
+                style={{ color: activeTimer.color, zIndex: 41, position: 'relative', pointerEvents: 'auto', userSelect: 'none' }}
+              >
+                <FiSquare className="text-xl pointer-events-none" />
+              </button>
+            </motion.div>
+          ) : null}
+        </AnimatedRegion>
+
+        <AnimatedRegion
+          transitionKey={`finished:${activeTimer.id}:${isFinished && activeTimer.type === 'countdown' ? 'yes' : 'no'}`}
+          type="scale"
+          className="pt-8"
         >
-          <div className="flex items-center space-x-2">
-            <FiList className="text-xl" />
-            <span className="font-medium">{t('lap.title')}</span>
-            <span className="text-sm opacity-70">({activeStopwatchTimer.laps.length})</span>
-          </div>
-        </motion.button>
-      ) : null}
-      </AutoTransition>
+          {isFinished && activeTimer.type === 'countdown' ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="glass-card px-6 py-4 rounded-xl"
+            >
+              <p className="text-lg font-medium text-gray-800 dark:text-gray-200">{t('timer.finished')}</p>
+            </motion.div>
+          ) : null}
+        </AnimatedRegion>
+
+        <AnimatedRegion
+          transitionKey={`description:${activeTimer.id}:${activeTimer.type}:${getTimerDescription()}`}
+          className="pt-6"
+        >
+          <motion.p
+            className="text-sm text-gray-500 dark:text-gray-400"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            {getTimerDescription()}
+          </motion.p>
+        </AnimatedRegion>
+
+        <AnimatedRegion
+          transitionKey={`laps:${activeTimer.id}:${activeStopwatchTimer?.laps?.length ?? 0}`}
+          type="slideUp"
+          className="pt-6"
+        >
+          {activeStopwatchTimer && activeStopwatchTimer.laps && activeStopwatchTimer.laps.length > 0 ? (
+            <motion.button
+              className="glass-card px-6 py-3 rounded-xl hover:bg-white/10 dark:hover:bg-black/10 transition-colors cursor-pointer"
+              style={{ color: activeTimer.color, zIndex: 10, position: 'relative', pointerEvents: 'auto' }}
+              onClick={() => { setIsLapModalOpen(true); track('lap_modal_open'); }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <div className="flex items-center space-x-2">
+                <FiList className="text-xl" />
+                <span className="font-medium">{t('lap.title')}</span>
+                <span className="text-sm opacity-70">({activeStopwatchTimer.laps.length})</span>
+              </div>
+            </motion.button>
+          ) : null}
+        </AnimatedRegion>
+      </div>
+      </div>
+
+      {/* Reserve the normal one-line description height so the core stays centered while overlays grow below it. */}
+      <div aria-hidden="true" className="h-11 shrink-0" />
       
       {/* 分段计时弹窗 */}
       <AutoTransition portal transitionKey={isLapModalOpen && activeStopwatchTimer ? 'lap-modal-open' : 'lap-modal-closed'} initial={false} type="fade">

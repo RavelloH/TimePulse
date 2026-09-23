@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { TimerType } from '@/domain/timer';
 import { AutoTransition } from '@/components/ui';
+import {
+  LinearDialogShell,
+  LinearDialogTransition,
+  type LinearDialogDirection,
+} from '@/components/composed';
 import AddStopwatchModal from './AddStopwatchModal';
 import AddTimerModal from './AddTimerModal';
 import AddWorldClockModal from './AddWorldClockModal';
@@ -12,11 +17,12 @@ type TimerCreationFlowProps = {
 };
 
 /**
- * Coordinates the three timer creation screens without changing their
- * existing markup, motion timing, or close semantics.
+ * Coordinates the three timer creation screens inside one persistent dialog
+ * frame. Only the frame's content changes as the linear flow advances.
  */
 export default function TimerCreationFlow({ open, onOpenChange }: TimerCreationFlowProps) {
   const [selectedType, setSelectedType] = useState<TimerType | null>(null);
+  const [direction, setDirection] = useState<LinearDialogDirection>(1);
 
   useEffect(() => {
     if (!open) {
@@ -33,28 +39,39 @@ export default function TimerCreationFlow({ open, onOpenChange }: TimerCreationF
   }, [onOpenChange]);
 
   const selectType = useCallback((type: TimerType) => {
+    setDirection(1);
     setSelectedType(type);
   }, []);
 
+  const goBackToTypeSelection = useCallback(() => {
+    setDirection(-1);
+    setSelectedType(null);
+  }, []);
+
+  const currentStep = selectedType ?? 'timer-type';
+
   return (
-    <>
-      <AutoTransition portal transitionKey={open && selectedType === null ? 'timer-type-open' : 'timer-type-closed'} initial={false} type="fade">
-        {open && selectedType === null ? (
-          <TimerTypeModal onClose={close} onSelectType={selectType} />
-        ) : null}
-      </AutoTransition>
-
-      <AutoTransition portal transitionKey={open && selectedType === 'countdown' ? 'countdown-open' : 'countdown-closed'} initial={false} type="fade">
-        {open && selectedType === 'countdown' ? <AddTimerModal onClose={close} /> : null}
-      </AutoTransition>
-
-      <AutoTransition portal transitionKey={open && selectedType === 'stopwatch' ? 'stopwatch-open' : 'stopwatch-closed'} initial={false} type="fade">
-        {open && selectedType === 'stopwatch' ? <AddStopwatchModal onClose={close} /> : null}
-      </AutoTransition>
-
-      <AutoTransition portal transitionKey={open && selectedType === 'worldclock' ? 'worldclock-open' : 'worldclock-closed'} initial={false} type="fade">
-        {open && selectedType === 'worldclock' ? <AddWorldClockModal onClose={close} /> : null}
-      </AutoTransition>
-    </>
+    <AutoTransition
+      portal
+      transitionKey={open ? 'timer-creation-open' : 'timer-creation-closed'}
+      initial={open}
+      type="fade"
+    >
+      {open ? (
+        <LinearDialogShell onClose={close}>
+          <LinearDialogTransition transitionKey={currentStep} direction={direction} initial={false}>
+            {selectedType === null ? (
+              <TimerTypeModal embedded onClose={close} onSelectType={selectType} />
+            ) : selectedType === 'countdown' ? (
+              <AddTimerModal embedded onClose={close} onBack={goBackToTypeSelection} />
+            ) : selectedType === 'stopwatch' ? (
+              <AddStopwatchModal embedded onClose={close} onBack={goBackToTypeSelection} />
+            ) : (
+              <AddWorldClockModal embedded onClose={close} onBack={goBackToTypeSelection} />
+            )}
+          </LinearDialogTransition>
+        </LinearDialogShell>
+      ) : null}
+    </AutoTransition>
   );
 }

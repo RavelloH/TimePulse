@@ -8,9 +8,10 @@ import type { TimerType } from '@/domain/timer';
 type TimerTypeModalProps = {
   onClose: () => void;
   onSelectType: (type: TimerType) => void;
+  embedded?: boolean;
 };
 
-export default function TimerTypeModal({ onClose, onSelectType }: TimerTypeModalProps) {
+export default function TimerTypeModal({ onClose, onSelectType, embedded = false }: TimerTypeModalProps) {
   const { accentColor } = useTheme();
   const { t } = useTranslation();
 
@@ -44,22 +45,9 @@ export default function TimerTypeModal({ onClose, onSelectType }: TimerTypeModal
     },
   ];
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto py-4"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="glass-card w-full max-w-md m-4 p-6 rounded-2xl"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-center mb-6">
+  const content = (
+    <>
+        <div className="flex justify-between items-center pb-6">
           <h2 className="text-2xl font-semibold">{t('timer.selectType', '选择计时器类型')}</h2>
           <button
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -101,7 +89,7 @@ export default function TimerTypeModal({ onClose, onSelectType }: TimerTypeModal
           })}
         </div>
 
-        <div className="mt-6 flex justify-end">
+        <div className="pt-6 flex justify-start">
           <Button
             variant="glassSecondary"
             onClick={onClose}
@@ -109,6 +97,27 @@ export default function TimerTypeModal({ onClose, onSelectType }: TimerTypeModal
             {t('common.cancel', '取消')}
           </Button>
         </div>
+    </>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm overflow-x-hidden overflow-y-auto py-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="glass-card w-full max-w-md m-4 p-6 rounded-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        {content}
       </motion.div>
     </motion.div>
   );

@@ -8,6 +8,7 @@ import imageStorage from '@/services/imageStorage';
 import { track, bucketFileSize } from '@/services/analytics';
 import type { BackgroundMode } from '../settings';
 import { AutoResizer, AutoTransition } from '@/components/ui';
+import { LinearDialogTransition } from '@/components/composed';
 
 type BackgroundSettingsModalProps = {
   onClose: () => void;
@@ -46,11 +47,19 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
   } = useBackground();
 
   const [activeTab, setActiveTab] = useState<BackgroundTab>('url');
+  const [tabDirection, setTabDirection] = useState<1 | -1>(1);
   const [imageUrl, setImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const selectTab = (nextTab: BackgroundTab): void => {
+    const tabOrder: BackgroundTab[] = ['url', 'file', 'preview'];
+    setTabDirection(tabOrder.indexOf(nextTab) >= tabOrder.indexOf(activeTab) ? 1 : -1);
+    setActiveTab(nextTab);
+    track('background_tab_change', { tab: nextTab });
+  };
 
   // 加载当前背景用于预览
   useEffect(() => {
@@ -171,18 +180,18 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 p-4 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto"
+      className="fixed inset-0 bg-black/50 p-4 backdrop-blur-sm flex items-center justify-center z-50 overflow-x-hidden overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="glass-card w-full max-w-2xl p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
+        className="glass-card w-full max-w-2xl p-6 rounded-2xl max-h-[90vh] overflow-x-hidden overflow-y-auto"
         onClick={handleContentClick}
       >
         {/* 标题栏 */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center pb-6">
           <h2 className="text-2xl font-semibold">背景设置</h2>
           <button
             className="p-2 rounded-full btn-glass-hover cursor-pointer"
@@ -193,7 +202,7 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
         </div>
 
         {/* Tab 切换 */}
-        <div className="flex space-x-2 mb-6">
+        <div className="flex space-x-2 pb-6">
           <button
             className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
               activeTab === 'url'
@@ -205,7 +214,7 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
                 ? { backgroundColor: accentColor }
                 : {}
             }
-            onClick={() => { setActiveTab('url'); track('background_tab_change', { tab: 'url' }); }}
+            onClick={() => selectTab('url')}
           >
             <FiLink className="inline mr-2" />
             图片 URL
@@ -221,7 +230,7 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
                 ? { backgroundColor: accentColor }
                 : {}
             }
-            onClick={() => { setActiveTab('file'); track('background_tab_change', { tab: 'file' }); }}
+            onClick={() => selectTab('file')}
           >
             <FiUpload className="inline mr-2" />
             上传文件
@@ -237,7 +246,7 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
                 ? { backgroundColor: accentColor }
                 : {}
             }
-            onClick={() => { setActiveTab('preview'); track('background_tab_change', { tab: 'preview' }); }}
+            onClick={() => selectTab('preview')}
           >
             <FiEye className="inline mr-2" />
             预览与调整
@@ -245,36 +254,44 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
         </div>
 
         {/* 错误提示 */}
-        <AutoTransition transitionKey={error || 'background-no-error'} initial={false} type="slideDown">
-          {error ? (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg"
-            >
-              {error}
-            </motion.div>
-          ) : null}
-        </AutoTransition>
+        <AutoResizer initial={false} overflow="hidden">
+          <AutoTransition transitionKey={error || 'background-no-error'} initial={false} type="slideDown">
+            {error ? (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="pb-4"
+              >
+                <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+                  {error}
+                </div>
+              </motion.div>
+            ) : null}
+          </AutoTransition>
+        </AutoResizer>
 
         {/* 成功提示 */}
-        <AutoTransition transitionKey={success || 'background-no-success'} initial={false} type="slideDown">
-          {success ? (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg"
-            >
-              {success}
-            </motion.div>
-          ) : null}
-        </AutoTransition>
+        <AutoResizer initial={false} overflow="hidden">
+          <AutoTransition transitionKey={success || 'background-no-success'} initial={false} type="slideDown">
+            {success ? (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="pb-4"
+              >
+                <div className="p-3 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg">
+                  {success}
+                </div>
+              </motion.div>
+            ) : null}
+          </AutoTransition>
+        </AutoResizer>
 
         {/* URL 输入 Tab */}
-        <AutoResizer initial={false}>
-        <AutoTransition transitionKey={`background-tab-${activeTab}`} initial={false} type="crossFade">
+        <AutoResizer initial={false} overflow="hidden">
+        <LinearDialogTransition transitionKey={`background-tab-${activeTab}`} direction={tabDirection}>
         <>
         {activeTab === 'url' && (
           <motion.div
@@ -477,8 +494,14 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
           </motion.div>
         )}
         </>
-        </AutoTransition>
+        </LinearDialogTransition>
         </AutoResizer>
+
+        <div className="flex justify-start pt-6">
+          <button className="btn-glass-secondary" onClick={onClose}>
+            {_t('common.cancel', '取消')}
+          </button>
+        </div>
       </motion.div>
     </motion.div>
   );

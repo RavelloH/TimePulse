@@ -4,6 +4,7 @@ import { FiBell, FiX, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import { useTranslation } from '@/i18n/useTranslation';
 import { track } from '@/services/analytics';
 import { AutoResizer, AutoTransition } from '@/components/ui';
+import { LinearDialogTransition } from '@/components/composed';
 
 type NotificationPermissionModalProps = {
   isOpen: boolean;
@@ -16,6 +17,7 @@ type PermissionStep = 'request' | 'success' | 'failed';
 export default function NotificationPermissionModal({ isOpen, onClose, onAllow, onDeny }: NotificationPermissionModalProps) {
   const { t } = useTranslation();
   const [step, setStep] = useState<PermissionStep>('request');
+  const [stepDirection, setStepDirection] = useState<1 | -1>(1);
   const [isRequesting, setIsRequesting] = useState(false);
 
   const handleAllow = async () => {
@@ -26,22 +28,27 @@ export default function NotificationPermissionModal({ isOpen, onClose, onAllow, 
       track('notification_permission_result', { result: permission });
 
       if (permission === 'granted') {
+        setStepDirection(1);
         setStep('success');
         setTimeout(() => {
           onAllow();
           handleClose();
         }, 2000);
       } else {
+        setStepDirection(1);
         setStep('failed');
         setTimeout(() => {
+          setStepDirection(-1);
           setStep('request');
         }, 3000);
       }
     } catch (error) {
       console.error('请求通知权限失败:', error);
       track('notification_permission_result', { result: 'error' });
+      setStepDirection(1);
       setStep('failed');
       setTimeout(() => {
+        setStepDirection(-1);
         setStep('request');
       }, 3000);
     } finally {
@@ -56,6 +63,7 @@ export default function NotificationPermissionModal({ isOpen, onClose, onAllow, 
   };
 
   const handleClose = () => {
+    setStepDirection(-1);
     setStep('request');
     onClose();
   };
@@ -64,7 +72,7 @@ export default function NotificationPermissionModal({ isOpen, onClose, onAllow, 
     switch (step) {
       case 'success':
         return (
-          <div className="text-center">
+          <div className="text-center flow-root">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -83,7 +91,7 @@ export default function NotificationPermissionModal({ isOpen, onClose, onAllow, 
 
       case 'failed':
         return (
-          <div className="text-center">
+          <div className="text-center flow-root">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -106,7 +114,7 @@ export default function NotificationPermissionModal({ isOpen, onClose, onAllow, 
       default:
         return (
           <>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between pb-6">
               <div className="flex items-center space-x-3">
                 <div className="p-3 rounded-full bg-primary-500/80 backdrop-blur-sm">
                   <FiBell className="w-6 h-6 text-white" />
@@ -117,7 +125,7 @@ export default function NotificationPermissionModal({ isOpen, onClose, onAllow, 
               </div>
             </div>
 
-            <div className="mb-6 space-y-4">
+            <div className="pb-6 space-y-4">
               <p className="text-gray-600 dark:text-gray-300">
                 {t('notification.description')}
               </p>
@@ -162,20 +170,22 @@ export default function NotificationPermissionModal({ isOpen, onClose, onAllow, 
       transitionKey={isOpen ? 'notification-permission-open' : 'notification-permission-closed'}
       initial={false}
       type="scale"
-      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-50 backdrop-blur-sm overflow-x-hidden overflow-y-auto"
       style={{ pointerEvents: isOpen ? 'auto' : 'none' }}
       onClick={handleClose}
     >
       {isOpen ? (
-        <AutoResizer initial>
+        <AutoResizer initial overflow="hidden">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
+            className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-x-hidden overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
-            {renderContent()}
+            <LinearDialogTransition transitionKey={step} direction={stepDirection}>
+              {renderContent()}
+            </LinearDialogTransition>
           </motion.div>
         </AutoResizer>
       ) : null}

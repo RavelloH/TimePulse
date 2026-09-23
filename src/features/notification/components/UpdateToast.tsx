@@ -65,7 +65,7 @@ export default function UpdateToast() {
       onClick={handleDismiss}
     >
       {showToast ? (
-        <AutoResizer initial>
+        <AutoResizer initial overflow="hidden">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

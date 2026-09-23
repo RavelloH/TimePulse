@@ -9,10 +9,13 @@ import CustomSelect from '@/components/composed/CustomSelect';
 import TimezoneSelectionModal from '@/features/world-clock/components/TimezoneSelectionModal';
 import { Button } from '@/components/ui/button';
 import { AutoResizer, AutoTransition } from '@/components/ui';
+import { LinearDialogTransition } from '@/components/composed';
 import type { Holiday } from '@/domain/timer';
 
 type AddTimerModalProps = {
   onClose: () => void;
+  onBack?: () => void;
+  embedded?: boolean;
 };
 
 type CountdownFormData = {
@@ -47,7 +50,7 @@ const presetColors = [
   '#85A5FF'  // 浅蓝紫
 ];
 
-export default function AddTimerModal({ onClose }: AddTimerModalProps) {
+export default function AddTimerModal({ onClose, onBack, embedded = false }: AddTimerModalProps) {
   const { addTimer, holidaysList: rawHolidaysList } = useTimers();
   const holidaysList = rawHolidaysList;
   const { accentColor } = useTheme();
@@ -56,6 +59,12 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
   const [showHolidaysList, setShowHolidaysList] = useState(false);
   const [showTimezoneModal, setShowTimezoneModal] = useState(false);
   const [step, setStep] = useState(1); // 1: 基本信息, 2: 选择颜色, 3: 完成
+  const [stepDirection, setStepDirection] = useState<1 | -1>(1);
+
+  const goToStep = (nextStep: number) => {
+    setStepDirection(nextStep > step ? 1 : -1);
+    setStep(nextStep);
+  };
   
   // 随机选择一个预设颜色作为默认
   const randomColor = presetColors[Math.floor(Math.random() * presetColors.length)];
@@ -112,7 +121,7 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
     
     // 添加计时器
     addTimer(timerData);
-    setStep(3); // 进入完成步骤
+    goToStep(3); // 进入完成步骤
     
     // 3秒后关闭弹窗
     setTimeout(() => {
@@ -120,23 +129,8 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
     }, 2000);
   };
   
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}
-      >
-        <AutoResizer initial>
-        <AutoTransition transitionKey={`countdown-step-${step}-${showHolidaysList ? 'holidays-open' : 'holidays-closed'}`} initial={false} type="crossFade">
+  const stepContent = (
+    <LinearDialogTransition transitionKey={`countdown-step-${step}`} direction={stepDirection} initial={false}>
         <>
         {step === 1 && (
           <>
@@ -250,13 +244,13 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
             <div className="pt-6 flex justify-between">
               <Button
                 variant="glassSecondary"
-                onClick={onClose}
+                onClick={onBack ?? onClose}
               >
-                {t('common.cancel', '取消')}
+                {onBack ? t('common.previous', '上一步') : t('common.cancel', '取消')}
               </Button>
               <Button
                 variant="glassPrimary"
-                onClick={() => setStep(2)}
+                onClick={() => goToStep(2)}
                 disabled={!formData.name || !formData.targetDate || !formData.targetTime}
                 data-insightflare-event="countdown_step_color"
               >
@@ -278,7 +272,7 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
               </button>
             </div>
             
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center pb-6">
               <div 
                 className="w-24 h-24 rounded-full"
                 style={{ backgroundColor: formData.color }}
@@ -309,7 +303,7 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
             <div className="pt-6 flex justify-between">
               <Button
                 variant="glassSecondary"
-                onClick={() => setStep(1)}
+                onClick={() => goToStep(1)}
               >
                 {t('common.previous', '上一步')}
               </Button>
@@ -325,22 +319,27 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
         )}
         
         {step === 3 && (
-          <div className="py-8 text-center">
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500 flex items-center justify-center"
-            >
-              <FiCheck className="text-white text-3xl" />
-            </motion.div>
-            <h2 className="text-2xl font-semibold mb-2">{t('modal.countdown.created', '倒计时已创建')}</h2>
-            <p className="text-gray-500 dark:text-gray-400">{t('modal.countdown.createdDesc', '您的倒计时已成功创建')}</p>
+          <div className="flex flex-col items-center py-8 text-center">
+            <div className="pb-4">
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500"
+              >
+                <FiCheck className="text-3xl text-white" />
+              </motion.div>
+            </div>
+            <h2 className="w-full pb-2 text-2xl font-semibold">{t('modal.countdown.created', '倒计时已创建')}</h2>
+            <p className="w-full text-gray-500 dark:text-gray-400">{t('modal.countdown.createdDesc', '您的倒计时已成功创建')}</p>
           </div>
         )}
         </>
-        </AutoTransition>
-        </AutoResizer>
-      </motion.div>
+    </LinearDialogTransition>
+  );
+
+  const content = (
+    <>
+      {embedded ? stepContent : <AutoResizer initial overflow="hidden">{stepContent}</AutoResizer>}
       
       {/* 时区选择弹窗 */}
       <AutoTransition portal transitionKey={showTimezoneModal ? 'countdown-timezone-open' : 'countdown-timezone-closed'} initial={false} type="fade">
@@ -352,6 +351,28 @@ export default function AddTimerModal({ onClose }: AddTimerModalProps) {
         />
       ) : null}
       </AutoTransition>
+    </>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-50 backdrop-blur-sm overflow-x-hidden overflow-y-auto"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-x-hidden overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        {content}
+      </motion.div>
     </motion.div>
   );
 }

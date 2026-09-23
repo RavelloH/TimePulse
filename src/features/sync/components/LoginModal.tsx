@@ -8,6 +8,7 @@ import { useTimers } from '@/app/providers/TimerProvider';
 import { useTheme } from '@/app/providers/ThemeProvider';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AutoResizer, AutoTransition } from '@/components/ui';
+import { LinearDialogTransition } from '@/components/composed';
 
 type LoginModalProps = {
   onClose: () => void;
@@ -37,6 +38,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showLogin, setShowLogin] = useState(false);
+  const [contentDirection, setContentDirection] = useState<1 | -1>(1);
   const [isOffline, setIsOffline] = useState(false);
   
   // 初始化 - 检查是否已有同步ID
@@ -46,6 +48,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
     
     if (savedSyncId) {
       setSyncId(savedSyncId);
+      setContentDirection(1);
       setStatus('saved');
       
       if (savedPassword) {
@@ -114,6 +117,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
       await saveSyncPayload(newSyncId, newPassword, { timers, activeTimerId }, 30 * 24 * 60 * 60 * 1000);
       
       // 更新状态为已保存
+      setContentDirection(1);
       setStatus('saved');
       setSuccessMessage(t('login.generated'));
       console.log(`${t('login.syncIdSaved')}: ${newSyncId} - ${new Date().toLocaleString()}`);
@@ -121,6 +125,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
       setErrorMessage(`${t('login.generateError')}: ${getErrorMessage(error)}`);
       console.error('同步数据保存失败:', error);
       // 仍然显示生成的ID和密码，但状态为generated而非saved
+      setContentDirection(1);
       setStatus('generated');
     } finally {
       setIsLoading(false);
@@ -140,6 +145,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
       // 然后保存到远程
       await saveSyncPayload(syncId, password, { timers, activeTimerId }, 30 * 24 * 60 * 60 * 1000);
       
+      setContentDirection(1);
       setStatus('saved');
       setSuccessMessage('同步数据已保存到云端');
       
@@ -192,6 +198,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
           localStorage.setItem('timepulse_sync_password', inputPassword);
           setSyncId(inputSyncId);
           setPassword(inputPassword);
+          setContentDirection(1);
           setStatus('saved');
           
           // 更新同步URL
@@ -243,17 +250,17 @@ export default function LoginModal({ onClose }: LoginModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-[600] backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-[600] backdrop-blur-sm overflow-x-hidden overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
+        className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-x-hidden overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center pb-6">
           <h2 className="text-2xl font-semibold">{t('login.title')}</h2>
           <button
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
@@ -263,11 +270,10 @@ export default function LoginModal({ onClose }: LoginModalProps) {
           </button>
         </div>
         
-        <AutoResizer initial={false}>
-        <AutoTransition
+        <AutoResizer initial={false} overflow="hidden">
+        <LinearDialogTransition
           transitionKey={`${status}-${showLogin ? 'login' : 'generate'}-${isOffline ? 'offline' : 'online'}-${errorMessage ? 'error' : 'no-error'}-${successMessage ? 'success' : 'no-success'}`}
-          initial={false}
-          type="crossFade"
+          direction={contentDirection}
         >
         <div className="flow-root">
         {/* 离线状态提示 */}
@@ -301,13 +307,19 @@ export default function LoginModal({ onClose }: LoginModalProps) {
             <div className="flex mb-4">
               <button
                 className={`flex-1 py-2 border-b-2 ${!showLogin ? 'border-primary-500 text-primary-500' : 'border-gray-300 text-gray-500'}`}
-                onClick={() => setShowLogin(false)}
+                onClick={() => {
+                  setContentDirection(-1);
+                  setShowLogin(false);
+                }}
               >
                 {t('login.generateId')}
               </button>
               <button
                 className={`flex-1 py-2 border-b-2 ${showLogin ? 'border-primary-500 text-primary-500' : 'border-gray-300 text-gray-500'}`}
-                onClick={() => setShowLogin(true)}
+                onClick={() => {
+                  setContentDirection(1);
+                  setShowLogin(true);
+                }}
               >
                 {t('login.useExistingId')}
               </button>
@@ -467,7 +479,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
           )}
         </div>
         </div>
-        </AutoTransition>
+        </LinearDialogTransition>
         </AutoResizer>
         
         <div className="flex space-x-4">
@@ -476,7 +488,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
             onClick={onClose}
             disabled={isLoading}
           >
-            {t('common.close', '关闭')}
+            {t('common.cancel', '取消')}
           </button>
           <AutoTransition transitionKey={status !== 'idle' && canUseSystemShare ? 'login-system-share' : 'login-no-system-share'} initial={false} className="flex-1">
           {status !== 'idle' && canUseSystemShare ? (

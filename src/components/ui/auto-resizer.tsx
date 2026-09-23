@@ -29,7 +29,7 @@ export function AutoResizer({
   const widthRef = useRef<number | 'auto'>(initial && animateWidth ? 0 : 'auto');
   const [height, setHeight] = useState<number | 'auto'>(heightRef.current);
   const [width, setWidth] = useState<number | 'auto'>(widthRef.current);
-  const [hasMeasured, setHasMeasured] = useState(false);
+  const [updateCount, setUpdateCount] = useState(0);
 
   useEffect(() => {
     const content = contentRef.current;
@@ -38,16 +38,19 @@ export function AutoResizer({
     const measureContent = () => {
       const nextHeight = content.scrollHeight;
       const nextWidth = content.scrollWidth;
+      let changed = false;
 
       if (animateHeight && heightRef.current !== nextHeight) {
         heightRef.current = nextHeight;
         setHeight(nextHeight);
+        changed = true;
       }
       if (animateWidth && widthRef.current !== nextWidth) {
         widthRef.current = nextWidth;
         setWidth(nextWidth);
+        changed = true;
       }
-      setHasMeasured(true);
+      if (changed) setUpdateCount((count) => count + 1);
     };
 
     let frameId: number | null = null;
@@ -66,7 +69,7 @@ export function AutoResizer({
       : null;
     resizeObserver?.observe(content);
 
-    const mutationObserver = typeof MutationObserver !== 'undefined'
+    const mutationObserver = animateWidth && typeof MutationObserver !== 'undefined'
       ? new MutationObserver(scheduleMeasure)
       : null;
     mutationObserver?.observe(content, {
@@ -82,6 +85,8 @@ export function AutoResizer({
     };
   }, [animateHeight, animateWidth]);
 
+  const shouldAnimate = initial || updateCount > 1;
+
   return (
     <motion.div
       className={cn(className)}
@@ -95,7 +100,7 @@ export function AutoResizer({
         ...(animateWidth ? { width } : {}),
       }}
       transition={{
-        duration: initial || hasMeasured ? duration : 0,
+        duration: shouldAnimate ? duration : 0,
         ease,
       }}
     >

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { FiMapPin, FiSearch, FiX } from 'react-icons/fi';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AutoResizer, AutoTransition } from '@/components/ui';
+import { LinearDialogTransition } from '@/components/composed';
 
 type WorldClockPreset = {
   id: string;
@@ -253,6 +254,12 @@ export default function WorldClockSelectionModal({
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAll, setShowAll] = useState(false);
+  const [viewDirection, setViewDirection] = useState<1 | -1>(1);
+
+  const setView = (nextShowAll: boolean): void => {
+    setViewDirection(nextShowAll ? 1 : -1);
+    setShowAll(nextShowAll);
+  };
 
   // 翻译城市名
   const getTranslatedCity = (city: string, timezone: string): string => {
@@ -317,17 +324,17 @@ export default function WorldClockSelectionModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-50 backdrop-blur-sm overflow-x-hidden overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="glass-card w-full max-w-2xl p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
+        className="glass-card w-full max-w-2xl p-6 rounded-2xl max-h-[90vh] overflow-x-hidden overflow-y-auto"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center pb-6">
           <h2 className="text-2xl font-semibold">{t('modal.addWorldClock.selectWorldClock', '选择世界时间')}</h2>
           <button
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -337,8 +344,8 @@ export default function WorldClockSelectionModal({
           </button>
         </div>
 
-        <AutoResizer initial={false}>
-        <AutoTransition transitionKey={showAll ? `worldclock-all-${filteredTimezones.length}` : 'worldclock-popular'} initial={false} type="crossFade">
+        <AutoResizer initial={false} overflow="hidden">
+        <LinearDialogTransition transitionKey={showAll ? `worldclock-all-${filteredTimezones.length}` : 'worldclock-popular'} direction={viewDirection}>
         <>
         {!showAll && (
           <>
@@ -380,7 +387,7 @@ export default function WorldClockSelectionModal({
             <div className="flex justify-center">
               <button
                 className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
-                onClick={() => setShowAll(true)}
+                onClick={() => setView(true)}
                 data-insightflare-event="worldclock_view_all"
               >
                 {t('modal.addWorldClock.viewMoreTimezones', '查看更多时区')}
@@ -433,7 +440,7 @@ export default function WorldClockSelectionModal({
             <div className="pt-4 flex justify-center">
               <button
                 className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-                onClick={() => setShowAll(false)}
+                onClick={() => setView(false)}
               >
                 {t('modal.addWorldClock.backToPopular', '返回常用城市')}
               </button>
@@ -441,7 +448,7 @@ export default function WorldClockSelectionModal({
           </>
         )}
         </>
-        </AutoTransition>
+        </LinearDialogTransition>
         </AutoResizer>
 
         <div className="pt-6 flex justify-end">

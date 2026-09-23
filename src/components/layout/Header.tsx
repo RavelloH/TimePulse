@@ -14,6 +14,7 @@ import TimerCreationFlow from '@/features/timer-management/components/TimerCreat
 import TimerTabs from '@/features/timer-management/components/TimerTabs';
 import { HexColorPicker } from 'react-colorful';
 import { AutoResizer, AutoTransition } from '@/components/ui';
+import { LinearDialogTransition } from '@/components/composed';
 
 type TimerUpdate = {
   name: string;
@@ -41,6 +42,7 @@ export default function Header() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [editingTimer, setEditingTimer] = useState<TimerEditState | null>(null);
+  const [manageDirection, setManageDirection] = useState<1 | -1>(1);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isTimerCreationOpen, setIsTimerCreationOpen] = useState(false);
@@ -72,6 +74,7 @@ export default function Header() {
 
   // 开始编辑计时器
   const startEditTimer = (timer: Timer) => {
+    setManageDirection(1);
     if (timer.type === 'countdown' || !timer.type) {
       // 倒计时可以编辑所有属性
       setEditingTimer({
@@ -112,6 +115,7 @@ export default function Header() {
       });
     }
     
+    setManageDirection(-1);
     setEditingTimer(null);
     setShowColorPicker(false);
   };
@@ -497,7 +501,7 @@ export default function Header() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 p-4 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto"
+            className="fixed inset-0 bg-black/50 p-4 backdrop-blur-sm flex items-center justify-center z-50 overflow-x-hidden overflow-y-auto"
             onClick={() => {
               setIsManageOpen(false);
               setEditingTimer(null);
@@ -510,10 +514,10 @@ export default function Header() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
+              className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-x-hidden overflow-y-auto"
               onClick={(e: ReactMouseEvent<HTMLDivElement>) => e.stopPropagation()}
             >
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center pb-4">
                 <h2 className="text-xl font-semibold">{t('header.manage')}</h2>
                 <button
                   className="p-1 rounded-full btn-glass-hover cursor-pointer"
@@ -529,8 +533,8 @@ export default function Header() {
                 </button>
               </div>
 
-              <AutoResizer initial={false}>
-              <AutoTransition transitionKey={editingTimer ? `editing-${editingTimer.id}` : 'timer-list'} initial={false} type="slide">
+              <AutoResizer initial={false} overflow="hidden">
+              <LinearDialogTransition transitionKey={editingTimer ? `editing-${editingTimer.id}` : 'timer-list'} direction={manageDirection}>
               {editingTimer ? (
                 <div className="flex flex-col gap-4">
                   <h3 className="font-medium pb-2">
@@ -593,9 +597,12 @@ export default function Header() {
                   <div className="flex space-x-2 pt-2">
                     <button
                       className="flex-1 btn-glass-secondary"
-                      onClick={() => setEditingTimer(null)}
+                      onClick={() => {
+                        setManageDirection(-1);
+                        setEditingTimer(null);
+                      }}
                     >
-                      {t('common.cancel')}
+                      {t('common.previous')}
                     </button>
                     <button
                       className="flex-1 btn-glass-primary flex items-center justify-center"
@@ -608,6 +615,7 @@ export default function Header() {
                   </div>
                 </div>
               ) : (
+                <>
                 <div className="flex max-h-96 flex-col gap-2 overflow-y-auto">
                   {timers.map(timer => (
                     <div 
@@ -650,8 +658,23 @@ export default function Header() {
                     </div>
                   ))}
                 </div>
+                <div className="flex justify-start pt-4">
+                  <button
+                    className="btn-glass-secondary"
+                    onClick={() => {
+                      setIsManageOpen(false);
+                      setEditingTimer(null);
+                      if (window.location.hash === '#manage') {
+                        window.location.hash = '';
+                      }
+                    }}
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+                </>
               )}
-              </AutoTransition>
+              </LinearDialogTransition>
               </AutoResizer>
             </motion.div>
           </motion.div>
@@ -714,6 +737,12 @@ export default function Header() {
                       <div className="text-sm text-gray-500 dark:text-gray-400">{t('header.englishUS')}</div>
                     </div>
                   </div>
+                </button>
+              </div>
+
+              <div className="flex justify-start pt-4">
+                <button className="btn-glass-secondary" onClick={() => setIsLanguageOpen(false)}>
+                  {t('common.cancel')}
                 </button>
               </div>
             </motion.div>

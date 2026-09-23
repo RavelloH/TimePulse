@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { FiX, FiRotateCcw } from 'react-icons/fi';
 import { useFullscreen } from '@/app/providers/FullscreenProvider';
 import { useTheme } from '@/app/providers/ThemeProvider';
+import { useTranslation } from '@/i18n/useTranslation';
 import { track } from '@/services/analytics';
 import type { FontSize } from '@/domain/settings';
 import { AutoResizer, AutoTransition } from '@/components/ui';
@@ -11,6 +12,7 @@ type FullscreenSettingsModalProps = { onClose: () => void };
 
 export default function FullscreenSettingsModal({ onClose }: FullscreenSettingsModalProps) {
   const { theme, accentColor } = useTheme();
+  const { t } = useTranslation();
   const {
     headerHideDelay,
     timerFontSize,
@@ -50,7 +52,7 @@ export default function FullscreenSettingsModal({ onClose }: FullscreenSettingsM
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 p-4 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto"
+      className="fixed inset-0 bg-black/50 p-4 backdrop-blur-sm flex items-center justify-center z-50 overflow-x-hidden overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
@@ -61,7 +63,7 @@ export default function FullscreenSettingsModal({ onClose }: FullscreenSettingsM
         onClick={e => e.stopPropagation()}
       >
         {/* 标题栏 */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center pb-6">
           <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">全屏设置</h2>
           <button
             className="p-2 rounded-full bg-white/10 dark:bg-black/10 hover:bg-white/20 dark:hover:bg-black/20 backdrop-blur-sm cursor-pointer transition-colors border border-white/20 dark:border-white/10"
@@ -72,22 +74,22 @@ export default function FullscreenSettingsModal({ onClose }: FullscreenSettingsM
         </div>
 
         {/* 成功提示 */}
-        <div className={success ? 'pb-4' : undefined}>
-        <AutoResizer initial={false}>
-        <AutoTransition transitionKey={success ? 'fullscreen-success' : 'fullscreen-no-success'} initial={false} type="slideDown">
-          {success ? (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="p-3 bg-green-100/80 dark:bg-green-900/30 backdrop-blur-sm text-green-600 dark:text-green-400 rounded-lg border border-green-200/50 dark:border-green-800/30"
-            >
-              已恢复默认设置
-            </motion.div>
-          ) : null}
-        </AutoTransition>
+        <AutoResizer initial={false} overflow="hidden">
+          <AutoTransition transitionKey={success ? 'fullscreen-success' : 'fullscreen-no-success'} initial={false} type="slideDown">
+            {success ? (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="pb-4"
+              >
+                <div className="p-3 bg-green-100/80 dark:bg-green-900/30 backdrop-blur-sm text-green-600 dark:text-green-400 rounded-lg border border-green-200/50 dark:border-green-800/30">
+                  已恢复默认设置
+                </div>
+              </motion.div>
+            ) : null}
+          </AutoTransition>
         </AutoResizer>
-        </div>
 
         <div className="space-y-6">
           {/* 计时器字体大小 */}
@@ -211,6 +213,12 @@ export default function FullscreenSettingsModal({ onClose }: FullscreenSettingsM
           >
             <FiRotateCcw className="inline mr-2" />
             恢复默认设置
+          </button>
+        </div>
+
+        <div className="flex justify-start pt-6">
+          <button className="btn-glass-secondary" onClick={onClose}>
+            {t('common.cancel', '取消')}
           </button>
         </div>
       </motion.div>

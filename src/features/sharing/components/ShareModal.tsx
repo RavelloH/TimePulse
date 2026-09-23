@@ -100,14 +100,14 @@ export default function ShareModal({ onClose }: ShareModalProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-50 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 bg-black/50 p-4 flex items-center justify-center z-50 backdrop-blur-sm overflow-x-hidden overflow-y-auto"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-y-auto"
+        className="glass-card w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-x-hidden overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
@@ -156,7 +156,7 @@ export default function ShareModal({ onClose }: ShareModalProps) {
         
         <div className="mb-6 flex justify-center">
           <div className="p-4 bg-white rounded-xl">
-            <AutoResizer initial={false}>
+            <AutoResizer initial={false} overflow="hidden">
             <AutoTransition transitionKey={qrError || shareUrl.length > 2048 ? 'qr-error' : 'qr-ready'} initial={false} type="crossFade">
             {qrError || shareUrl.length > 2048 ? (
               <div className="w-[200px] h-[200px] flex flex-col items-center justify-center text-center text-gray-500">
@@ -189,7 +189,7 @@ export default function ShareModal({ onClose }: ShareModalProps) {
             className="flex-1 btn-glass-secondary flex items-center justify-center"
             onClick={onClose}
           >
-            {t('common.close')}
+            {t('common.cancel')}
           </button>
           <AutoTransition transitionKey={canUseSystemShare ? 'system-share' : 'no-system-share'} initial={false} className="flex-1">
           {canUseSystemShare ? (

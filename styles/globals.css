@@ -4,6 +4,12 @@
 @source "../src";
 @custom-variant dark (&:where(.dark, .dark *));
 
+@property --logo-accent {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #0ea5e9;
+}
+
 @theme {
   --color-primary-50: rgba(var(--color-primary), 0.05);
   --color-primary-100: rgba(var(--color-primary), 0.1);
@@ -33,18 +39,18 @@
   --color-accent: 79, 70, 229;
   --transition-duration: 300ms;
   --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
-  --text-color-transition-duration: 300ms;
+  --text-color-transition-duration: 500ms;
 }
 
 /* 替换为所有元素的过渡效果，改为更具体的选择器，减少对性能的影响 */
 .transition-enabled {
-  -webkit-transition: color var(--transition-duration) var(--transition-timing),
+  -webkit-transition: color var(--text-color-transition-duration) var(--transition-timing),
     background-color var(--transition-duration) var(--transition-timing),
     border-color var(--transition-duration) var(--transition-timing),
     -webkit-box-shadow var(--transition-duration) var(--transition-timing),
     box-shadow var(--transition-duration) var(--transition-timing),
     opacity var(--transition-duration) var(--transition-timing);
-  transition: color var(--transition-duration) var(--transition-timing),
+  transition: color var(--text-color-transition-duration) var(--transition-timing),
     background-color var(--transition-duration) var(--transition-timing),
     border-color var(--transition-duration) var(--transition-timing),
     -webkit-box-shadow var(--transition-duration) var(--transition-timing),
@@ -59,15 +65,15 @@ input,
 select,
 .glass-card,
 .btn {
-  -webkit-transition: color var(--transition-duration) var(--transition-timing),
+  -webkit-transition: color var(--text-color-transition-duration) var(--transition-timing),
     background-color var(--transition-duration) var(--transition-timing),
-    border-color var(--transition-duration) var (--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing),
     -webkit-box-shadow var(--transition-duration) var(--transition-timing),
     box-shadow var(--transition-duration) var(--transition-timing),
     opacity var(--transition-duration) var(--transition-timing);
-  transition: color var(--transition-duration) var(--transition-timing),
-    background-color var(--transition-duration) var (--transition-timing),
-    border-color var(--transition-duration) var (--transition-timing),
+  transition: color var(--text-color-transition-duration) var(--transition-timing),
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing),
     -webkit-box-shadow var(--transition-duration) var(--transition-timing),
     box-shadow var(--transition-duration) var(--transition-timing),
     opacity var(--transition-duration) var(--transition-timing);
@@ -140,7 +146,8 @@ select,
     backface-visibility: hidden;
     perspective: 1000px;
     /* 减少Firefox中的过渡属性 */
-    transition: background-color var(--transition-duration) var(--transition-timing) !important;
+    transition: color var(--text-color-transition-duration) var(--transition-timing),
+      background-color var(--transition-duration) var(--transition-timing) !important;
   }
 
   /* 为Firefox优化过渡时长，避免动画结束时的透明度跳变 */
@@ -778,6 +785,15 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+.logo-gradient {
+  background-image: linear-gradient(
+    45deg,
+    var(--logo-accent),
+    color-mix(in srgb, var(--logo-accent) 40%, transparent)
+  );
+  transition: --logo-accent var(--text-color-transition-duration) var(--transition-timing);
 }
 
 body {

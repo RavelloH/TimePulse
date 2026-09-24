@@ -99,6 +99,7 @@ function DigitColumn({
             width: '100%',
             textAlign: 'center',
             color,
+            transition: 'color 0.5s var(--transition-timing)',
             fontVariantNumeric: 'tabular-nums',
             lineHeight: 0.85,
           }}

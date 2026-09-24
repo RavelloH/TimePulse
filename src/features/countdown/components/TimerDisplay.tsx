@@ -1,5 +1,5 @@
 import { Fragment, useState, useEffect, useRef, type ReactNode } from 'react';
-import { LayoutGroup, motion } from 'framer-motion';
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { useTimers } from '@/app/providers/TimerProvider';
 import { useFullscreen } from '@/app/providers/FullscreenProvider';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -502,7 +502,7 @@ export default function TimerDisplay() {
       <div className="relative flex flex-col items-center">
       {/* 计时器名称 */}
       <AnimatedRegion
-        transitionKey={`title:${activeTimer.id}:${activeTimer.type}:${getTimerTitle()}`}
+        transitionKey="timer-title"
         className="pb-4"
       >
         <motion.h2
@@ -512,10 +512,20 @@ export default function TimerDisplay() {
           transition={{ duration: 0.5 }}
           style={{
             color: activeTimer.color,
-            transition: 'color 0.3s var(--transition-timing)'
+            transition: 'color 0.5s var(--transition-timing)'
           }}
         >
-          {getTimerTitle()}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={`title:${activeTimer.id}:${activeTimer.type}:${getTimerTitle()}`}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              {getTimerTitle()}
+            </motion.span>
+          </AnimatePresence>
         </motion.h2>
       </AnimatedRegion>
       

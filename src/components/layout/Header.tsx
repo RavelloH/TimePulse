@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { ChangeEvent, MouseEvent as ReactMouseEvent } from 'react';
+import type { CSSProperties, ChangeEvent, MouseEvent as ReactMouseEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FiMenu, FiX, FiSettings, FiMoon, FiSun, FiUser, FiMaximize, FiMinimize, FiEdit, FiSave, FiGlobe, FiPlus, FiShare2, FiImage } from 'react-icons/fi';
 import type { Timer, TimerType } from '@/domain/timer';
@@ -176,10 +176,8 @@ export default function Header() {
           transition={{ duration: 0.5 }}
         >
           <h1 
-            className="text-xl md:text-2xl font-bold font-display bg-clip-text text-transparent"
-            style={{ 
-              backgroundImage: `linear-gradient(45deg, ${accentColor}, ${accentColor}66)` 
-            }}
+            className="logo-gradient text-xl md:text-2xl font-bold font-display bg-clip-text text-transparent"
+            style={{ '--logo-accent': accentColor } as CSSProperties}
           >
             <a href="https://timepulse.ravelloh.top/">TimePulse</a>
           </h1>

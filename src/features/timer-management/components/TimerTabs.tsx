@@ -21,7 +21,6 @@ export default function TimerTabs({
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mouseMoveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [lastMouseMove, setLastMouseMove] = useState(Date.now());
 
   // 处理全局鼠标移动检测
   const handleGlobalMouseMove = () => {
@@ -34,8 +33,6 @@ export default function TimerTabs({
     if (!showAllTabs) {
       setShowAllTabs(true);
     }
-
-    setLastMouseMove(Date.now());
 
     // 清除之前的隐藏计时器
     if (mouseMoveTimerRef.current) {

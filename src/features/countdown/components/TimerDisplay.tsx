@@ -682,8 +682,8 @@ export default function TimerDisplay() {
       </AutoResizer>
       </LayoutGroup>
       
-      <div className="absolute left-1/2 top-full z-20 flex -translate-x-1/2 flex-col items-center whitespace-nowrap">
-        {/* Lower content animates in its own overlay and is excluded from the centered core's measured height. */}
+      <div className="relative z-20 flex flex-col items-center whitespace-nowrap">
+        {/* The lower controls stay in the measured flow so the complete content group remains centered. */}
         <AnimatedRegion
           transitionKey={`controls:${activeTimer.id}:${activeTimer.type === 'stopwatch' ? 'stopwatch' : 'none'}`}
           type="slideUp"
@@ -785,9 +785,6 @@ export default function TimerDisplay() {
         </AnimatedRegion>
       </div>
       </div>
-
-      {/* Reserve the normal one-line description height so the core stays centered while overlays grow below it. */}
-      <div aria-hidden="true" className="h-11 shrink-0" />
       
       {/* 分段计时弹窗 */}
       <AutoTransition portal transitionKey={isLapModalOpen && activeStopwatchTimer ? 'lap-modal-open' : 'lap-modal-closed'} initial={false} type="fade">

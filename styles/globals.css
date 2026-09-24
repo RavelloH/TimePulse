@@ -4,6 +4,13 @@
 @source "../src";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Keep every Tailwind ring inside its control so overflow/animation wrappers cannot clip it. */
+[class^="ring-"],
+[class*=" ring-"],
+[class*=":ring-"] {
+  --tw-ring-inset: inset;
+}
+
 @property --logo-accent {
   syntax: "<color>";
   inherits: false;

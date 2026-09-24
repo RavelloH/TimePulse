@@ -1,6 +1,6 @@
 import { motion, type Easing } from 'framer-motion';
 import type { CSSProperties, ReactNode } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from './utils';
 
 export interface AutoResizerProps {
@@ -11,6 +11,8 @@ export interface AutoResizerProps {
   initial?: boolean;
   animateWidth?: boolean;
   animateHeight?: boolean;
+  collapsed?: boolean;
+  repaintOnExpand?: boolean;
   overflow?: CSSProperties['overflow'];
 }
 
@@ -22,9 +24,13 @@ export function AutoResizer({
   initial = false,
   animateWidth = false,
   animateHeight = true,
+  collapsed = false,
+  repaintOnExpand = false,
   overflow = 'visible',
 }: AutoResizerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const wasCollapsedRef = useRef(collapsed);
   const heightRef = useRef<number | 'auto'>(initial && animateHeight ? 0 : 'auto');
   const widthRef = useRef<number | 'auto'>(initial && animateWidth ? 0 : 'auto');
   const [height, setHeight] = useState<number | 'auto'>(heightRef.current);
@@ -85,10 +91,40 @@ export function AutoResizer({
     };
   }, [animateHeight, animateWidth]);
 
+  useLayoutEffect(() => {
+    const wasCollapsed = wasCollapsedRef.current;
+    wasCollapsedRef.current = collapsed;
+
+    if (!repaintOnExpand || !wasCollapsed || collapsed || overflow !== 'hidden') return undefined;
+
+    const container = containerRef.current;
+    if (!container) return undefined;
+
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        if (!container.isConnected) return;
+
+        // Some browsers fail to paint nested scrollers after revealing them
+        // inside an animated, overflow-clipped container until overflow changes.
+        container.style.overflow = 'visible';
+        void container.offsetHeight;
+        container.style.overflow = overflow;
+        void container.offsetHeight;
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      if (secondFrame) window.cancelAnimationFrame(secondFrame);
+    };
+  }, [collapsed, overflow, repaintOnExpand]);
+
   const shouldAnimate = initial || updateCount > 1;
 
   return (
     <motion.div
+      ref={containerRef}
       className={cn(className)}
       style={{
         alignItems: animateWidth ? 'flex-start' : undefined,
@@ -96,7 +132,7 @@ export function AutoResizer({
         overflow,
       }}
       animate={{
-        ...(animateHeight ? { height } : {}),
+        ...(animateHeight ? { height: collapsed ? 0 : height } : {}),
         ...(animateWidth ? { width } : {}),
       }}
       transition={{

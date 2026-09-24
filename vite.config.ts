@@ -1,14 +1,22 @@
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 const workspaceRoot = fileURLToPath(new URL('./', import.meta.url));
 
+const disableDevelopmentServiceWorker: Plugin = {
+  name: 'timepulse-disable-service-worker-in-development',
+  transformIndexHtml(html, context) {
+    if (!context.server) return html;
+    return html.replace('<script src="/register-sw.js" async></script>', '');
+  },
+};
+
 export default defineConfig({
   base: '/',
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), disableDevelopmentServiceWorker],
   resolve: {
     alias: {
       '@': resolve(workspaceRoot, 'src'),

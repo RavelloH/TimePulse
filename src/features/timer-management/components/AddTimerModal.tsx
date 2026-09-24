@@ -144,35 +144,49 @@ export default function AddTimerModal({ onClose, onBack, embedded = false }: Add
               </button>
             </div>
             
-            <div className="flex flex-col gap-4 pb-6">
+            <div className="pb-6">
               <button 
                 className="w-full glass-card p-4 text-left flex items-center hover:bg-white/10 dark:hover:bg-black/10"
                 onClick={() => setShowHolidaysList(!showHolidaysList)}
                 data-insightflare-event="holiday_list_toggle"
+                aria-expanded={showHolidaysList}
+                aria-controls="countdown-holiday-list"
               >
                 <FiCalendar className="mr-2 text-primary-500" />
                 <span>{t('modal.countdown.selectHoliday', '选择常用节假日')}</span>
               </button>
-              
-              {showHolidaysList && (
-                <div className="bg-white/10 dark:bg-black/10 rounded-xl p-3 max-h-60 overflow-y-auto flex flex-col gap-2">
-                  {holidaysList.map((holiday, index) => (
-                    <button
-                      key={index}
-                      className="w-full rounded-lg p-2 flex items-center justify-between hover:bg-white/20 dark:hover:bg-black/20 transition-colors"
-                      onClick={() => handleSelectHoliday(holiday)}
-                      data-insightflare-event="holiday_select"
-                      data-insightflare-event-holiday={holiday.name}
-                    >
-                      <span>{holiday.name}</span>
-                      <span 
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: holiday.color }}
-                      ></span>
-                    </button>
-                  ))}
+
+              <AutoResizer
+                initial
+                collapsed={!showHolidaysList}
+                repaintOnExpand
+                overflow="hidden"
+              >
+                <div
+                  id="countdown-holiday-list"
+                  className="pt-4"
+                  aria-hidden={!showHolidaysList}
+                  inert={!showHolidaysList}
+                >
+                  <div className="bg-white/10 dark:bg-black/10 rounded-xl p-3 max-h-60 overflow-y-auto flex flex-col gap-2">
+                    {holidaysList.map((holiday, index) => (
+                      <button
+                        key={index}
+                        className="w-full rounded-lg p-2 flex items-center justify-between hover:bg-white/20 dark:hover:bg-black/20 transition-colors"
+                        onClick={() => handleSelectHoliday(holiday)}
+                        data-insightflare-event="holiday_select"
+                        data-insightflare-event-holiday={holiday.name}
+                      >
+                        <span>{holiday.name}</span>
+                        <span
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: holiday.color }}
+                        ></span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              )}
+              </AutoResizer>
             </div>
             
             <form className="flex flex-col gap-4">
@@ -184,7 +198,7 @@ export default function AddTimerModal({ onClose, onBack, embedded = false }: Add
                   value={formData.name}
                   onChange={handleChange}
                   placeholder={t('modal.countdown.namePlaceholder', '例如: 春节倒计时')}
-                  className="w-full px-4 py-2 rounded-lg bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-white/20 dark:border-white/10 focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                  className="w-full px-4 py-2 rounded-lg bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-white/20 dark:border-white/10 focus:ring-2 focus:ring-inset focus:ring-primary-500 focus:outline-none"
                   required
                 />
               </div>
@@ -198,7 +212,7 @@ export default function AddTimerModal({ onClose, onBack, embedded = false }: Add
                     name="targetDate"
                     value={formData.targetDate}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-white/20 dark:border-white/10 focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-white/20 dark:border-white/10 focus:ring-2 focus:ring-inset focus:ring-primary-500 focus:outline-none"
                     required
                   />
                 </div>
@@ -213,7 +227,7 @@ export default function AddTimerModal({ onClose, onBack, embedded = false }: Add
                     name="targetTime"
                     value={formData.targetTime}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-white/20 dark:border-white/10 focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-white/20 dark:border-white/10 focus:ring-2 focus:ring-inset focus:ring-primary-500 focus:outline-none"
                     required
                   />
                 </div>

@@ -69,14 +69,24 @@ export default function TimerTabs({
     }
   };
 
-  // 处理鼠标滚轮事件
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    const viewport = getScrollViewport(tabsScrollRef.current);
-    if (viewport) {
-      e.preventDefault();
-      viewport.scrollLeft += e.deltaY;
-    }
-  };
+  // React's delegated wheel listener may be passive in some browsers. Bind
+  // directly so the selector can reliably convert vertical wheel input into
+  // horizontal scrolling without scrolling the page behind it.
+  useEffect(() => {
+    const host = tabsScrollRef.current;
+    if (!host) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      const viewport = getScrollViewport(host);
+      if (!viewport) return;
+
+      event.preventDefault();
+      viewport.scrollLeft += event.deltaY;
+    };
+
+    host.addEventListener('wheel', handleWheel, { passive: false });
+    return () => host.removeEventListener('wheel', handleWheel);
+  }, []);
 
   // 处理悬浮延迟展开
   const handleMouseEnter = () => {
@@ -245,7 +255,6 @@ export default function TimerTabs({
         }`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onWheel={handleWheel}
         style={{
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',
@@ -305,6 +314,11 @@ export default function TimerTabs({
           }
         }}
       >
+        <div
+          className={`flex h-full w-max min-w-full items-center ${
+            showAllTabs ? 'justify-start' : 'justify-center'
+          }`}
+        >
         {/* 展开状态的所有标签容器 - 仅在展开时显示 */}
         <AutoTransition transitionKey={showAllTabs ? `expanded-${timers.length}` : 'expanded-hidden'} initial={false} type="crossFade">
         {showAllTabs ? (
@@ -408,6 +422,7 @@ export default function TimerTabs({
             })
           ) : null}
         </AutoTransition>
+        </div>
       </div>
     </div>
   );

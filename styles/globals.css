@@ -735,6 +735,11 @@ select,
   display: none; /* Chrome, Safari, Opera */
 }
 
+/* Native scrolling avoids DOM reparenting while the timer pills animate. */
+.timer-island-scroll {
+  overflow-y: auto;
+}
+
 /* Non-Safari browsers use OverlayScrollbars; the native rails remain hidden. */
 html:not([data-native-scrollbars="true"]) *,
 html:not([data-native-scrollbars="true"]) {

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { CSSProperties, ChangeEvent, MouseEvent as ReactMouseEvent } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, Reorder, motion, useDragControls } from 'framer-motion';
 import { FiMenu, FiX, FiSettings, FiMoon, FiSun, FiUser, FiMaximize, FiMinimize, FiEdit, FiSave, FiGlobe, FiPlus, FiShare2, FiImage } from 'react-icons/fi';
 import type { Timer, TimerType } from '@/domain/timer';
 import { useTimers } from '@/app/providers/TimerProvider';
@@ -32,8 +32,76 @@ type TimerEditState = {
   isLimitedEdit?: boolean;
 };
 
+function TimerManageRow({
+  timer,
+  summary,
+  dragLabel,
+  onEdit,
+  onDelete,
+  onDragEnd,
+}: {
+  timer: Timer;
+  summary: string;
+  dragLabel: string;
+  onEdit: (timer: Timer) => void;
+  onDelete: (id: string) => void;
+  onDragEnd: () => void;
+}) {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      as="div"
+      value={timer.id}
+      dragListener={false}
+      dragControls={dragControls}
+      onDragEnd={onDragEnd}
+      className="flex items-center justify-between gap-2 rounded-lg border border-white/20 bg-white/30 p-3 backdrop-blur-sm hover:bg-white/50 dark:border-white/10 dark:bg-black/30 dark:hover:bg-black/50"
+      style={{ borderLeft: `4px solid ${timer.color || '#0ea5e9'}` }}
+    >
+      <button
+        type="button"
+        className="inline-flex size-7 shrink-0 touch-none cursor-grab items-center justify-center rounded-md bg-transparent p-0 text-gray-500 transition-colors hover:bg-primary-500/10 hover:text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/60 active:cursor-grabbing dark:text-gray-400 dark:hover:bg-primary-500/15 dark:hover:text-primary-300"
+        onPointerDown={(event) => dragControls.start(event)}
+        aria-label={`${dragLabel}: ${timer.name}`}
+        title={dragLabel}
+      >
+        <span aria-hidden="true" className="grid grid-cols-2 gap-[3px] text-current transition-colors">
+          {Array.from({ length: 6 }, (_, index) => (
+            <span key={index} className="size-[3px] rounded-full bg-current" />
+          ))}
+        </span>
+      </button>
+      <div className="min-w-0 flex-1">
+        <h3 className="truncate font-medium">{timer.name}</h3>
+        <p className="truncate text-xs text-gray-500 dark:text-gray-400">{summary}</p>
+      </div>
+      <div className="flex shrink-0 gap-2">
+        <button
+          type="button"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-blue-500/10 text-blue-600 backdrop-blur-sm hover:bg-blue-500/20 dark:border-blue-400/20 dark:bg-blue-500/15 dark:text-blue-400 dark:hover:bg-blue-500/25"
+          onClick={() => onEdit(timer)}
+          data-insightflare-event="timer_edit_open"
+          data-insightflare-event-type={timer.type || 'countdown'}
+        >
+          <FiEdit className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10 text-red-600 backdrop-blur-sm hover:bg-red-500/20 dark:border-red-400/20 dark:bg-red-500/15 dark:text-red-400 dark:hover:bg-red-500/25"
+          onClick={() => onDelete(timer.id)}
+          data-insightflare-event="timer_delete"
+          data-insightflare-event-type={timer.type || 'countdown'}
+        >
+          <FiX className="size-3.5" />
+        </button>
+      </div>
+    </Reorder.Item>
+  );
+}
+
 export default function Header() {
-  const { timers, activeTimerId, setActiveTimerId, deleteTimer, updateTimer } = useTimers();
+  const { timers, activeTimerId, setActiveTimerId, reorderTimers, deleteTimer, updateTimer } = useTimers();
   const { theme, toggleTheme, accentColor } = useTheme();
   const { isFullscreen, isHeaderVisible, headerHideDelay, showHeader, hideHeader } = useFullscreen();
   const { t, changeLanguage } = useTranslation();
@@ -46,6 +114,43 @@ export default function Header() {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isTimerCreationOpen, setIsTimerCreationOpen] = useState(false);
+  const [timerOrder, setTimerOrder] = useState(() => timers.map((timer) => timer.id));
+  const timerOrderRef = useRef(timerOrder);
+
+  useEffect(() => {
+    const availableIds = new Set(timers.map((timer) => timer.id));
+    const nextOrder = timerOrderRef.current.filter((id) => availableIds.has(id));
+    const orderedIds = new Set(nextOrder);
+    for (const timer of timers) {
+      if (!orderedIds.has(timer.id)) {
+        nextOrder.push(timer.id);
+        orderedIds.add(timer.id);
+      }
+    }
+    const orderChanged = nextOrder.length !== timerOrderRef.current.length
+      || nextOrder.some((id, index) => id !== timerOrderRef.current[index]);
+    timerOrderRef.current = nextOrder;
+    if (orderChanged) setTimerOrder(nextOrder);
+  }, [timers]);
+
+  const handleTimerReorder = (nextOrder: string[]) => {
+    timerOrderRef.current = nextOrder;
+    setTimerOrder(nextOrder);
+  };
+
+  const handleTimerReorderEnd = () => {
+    const currentOrder = timers.map((timer) => timer.id);
+    const nextOrder = timerOrderRef.current;
+    const orderChanged = nextOrder.length !== currentOrder.length
+      || nextOrder.some((id, index) => id !== currentOrder[index]);
+    if (orderChanged) reorderTimers(nextOrder);
+  };
+
+  const timersById = new Map(timers.map((timer) => [timer.id, timer]));
+  const orderedTimerIds = [
+    ...timerOrder.filter((id) => timersById.has(id)),
+    ...timers.map((timer) => timer.id).filter((id) => !timerOrder.includes(id)),
+  ];
   // 打开登录模态框
   const openLoginModal = () => {
     setIsLoginOpen(true);
@@ -194,7 +299,7 @@ export default function Header() {
           <div className="hidden md:flex items-center">
             {/* 添加计时器按钮 */}
             <button
-              className="p-2 ml-1 rounded-full btn-glass-hover text-gray-700 dark:text-gray-300 cursor-pointer"
+              className="p-2 ml-1 rounded-full btn-ghost text-gray-700 dark:text-gray-300 cursor-pointer"
               onClick={() => {
                 setIsTimerCreationOpen(true);
                 if (window.location.hash !== '#add') {
@@ -209,7 +314,7 @@ export default function Header() {
 
             {/* 背景设置按钮 */}
             <button
-              className="p-2 ml-1 rounded-full btn-glass-hover text-gray-700 dark:text-gray-300 cursor-pointer"
+              className="p-2 ml-1 rounded-full btn-ghost text-gray-700 dark:text-gray-300 cursor-pointer"
               onClick={() => {
                 if (window.location.hash !== '#background') {
                   window.location.hash = 'background';
@@ -222,7 +327,7 @@ export default function Header() {
 
             {/* 分享按钮 */}
             <button
-              className="p-2 ml-1 rounded-full btn-glass-hover text-gray-700 dark:text-gray-300 cursor-pointer"
+              className="p-2 ml-1 rounded-full btn-ghost text-gray-700 dark:text-gray-300 cursor-pointer"
               onClick={() => {
                 setIsShareOpen(true);
                 if (window.location.hash !== '#share') {
@@ -237,7 +342,7 @@ export default function Header() {
 
             {/* 全屏按钮 */}
             <button
-              className="p-2 ml-1 rounded-full btn-glass-hover text-gray-700 dark:text-gray-300 cursor-pointer"
+              className="p-2 ml-1 rounded-full btn-ghost text-gray-700 dark:text-gray-300 cursor-pointer"
               onClick={toggleFullscreen}
               data-insightflare-event="fullscreen_toggle"
               data-insightflare-event-to={isFullscreen ? 'off' : 'on'}
@@ -247,7 +352,7 @@ export default function Header() {
 
             {/* 登录按钮 */}
             <button
-              className="p-2 ml-1 rounded-full btn-glass-hover text-gray-700 dark:text-gray-300 cursor-pointer"
+              className="p-2 ml-1 rounded-full btn-ghost text-gray-700 dark:text-gray-300 cursor-pointer"
               onClick={openLoginModal}
               data-insightflare-event="login_open"
               data-insightflare-event-from="desktop"
@@ -257,7 +362,7 @@ export default function Header() {
 
             {/* 主题切换 */}
             <button
-              className="p-2 ml-1 rounded-full btn-glass-hover text-gray-700 dark:text-gray-300 cursor-pointer"
+              className="p-2 ml-1 rounded-full btn-ghost text-gray-700 dark:text-gray-300 cursor-pointer"
               onClick={toggleTheme}
               data-insightflare-event="theme_toggle"
               data-insightflare-event-to={theme === 'dark' ? 'light' : 'dark'}
@@ -267,7 +372,7 @@ export default function Header() {
 
             {/* 语言切换 */}
             <button
-              className="p-2 ml-1 rounded-full btn-glass-hover text-gray-700 dark:text-gray-300 cursor-pointer"
+              className="p-2 ml-1 rounded-full btn-ghost text-gray-700 dark:text-gray-300 cursor-pointer"
               onClick={() => setIsLanguageOpen(true)}
               data-insightflare-event="language_picker_open"
               data-insightflare-event-from="desktop"
@@ -277,7 +382,7 @@ export default function Header() {
 
             {/* 设置按钮 */}
             <button
-              className="p-2 ml-1 rounded-full btn-glass-hover text-gray-700 dark:text-gray-300 cursor-pointer"
+              className="p-2 ml-1 rounded-full btn-ghost text-gray-700 dark:text-gray-300 cursor-pointer"
               onClick={() => {
                 setIsManageOpen(true);
                 if (window.location.hash !== '#manage') {
@@ -295,7 +400,7 @@ export default function Header() {
           <div className="flex items-center md:hidden">
             {/* 移动端创建计时器按钮 */}
             <button
-              className="p-2 rounded-full btn-glass-hover text-gray-700 dark:text-gray-300 cursor-pointer"
+              className="p-2 rounded-full btn-ghost text-gray-700 dark:text-gray-300 cursor-pointer"
               onClick={() => {
                 setIsTimerCreationOpen(true);
                 if (window.location.hash !== '#add') {
@@ -310,7 +415,7 @@ export default function Header() {
 
             {/* 移动端菜单按钮 */}
             <button
-              className="p-2 ml-1 rounded-full btn-glass-hover text-gray-700 dark:text-gray-300 cursor-pointer"
+              className="p-2 ml-1 rounded-full btn-ghost text-gray-700 dark:text-gray-300 cursor-pointer"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               data-insightflare-event="mobile_menu_toggle"
             >
@@ -454,40 +559,49 @@ export default function Header() {
             </div>
 
             {/* 计时器选择区域 - 只有有滚动条时才显示，放在下面 */}
-            {timers.length > 0 && (
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('header.timers')}</h3>
-                <div className="flex max-h-48 flex-col gap-2 overflow-y-auto">
-                  {timers.map(timer => (
-                    <motion.button
-                      key={timer.id}
-                      layout
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className={`px-4 py-2 rounded-lg text-left ${
-                        activeTimerId === timer.id 
-                          ? 'text-white' 
-                          : 'bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-gray-200/60 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-white/20 dark:hover:bg-black/20'
-                      }`}
-                      style={
-                        activeTimerId === timer.id 
-                          ? { backgroundColor: timer.color || '#0ea5e9' } 
-                          : {}
-                      }
-                      onClick={() => {
-                        setActiveTimerId(timer.id);
-                        setIsMenuOpen(false);
-                      }}
-                      data-insightflare-event="timer_switch"
-                      data-insightflare-event-from="mobile_menu"
-                    >
-                      {timer.name}
-                    </motion.button>
-                  ))}
+            <div>
+              {timers.length > 0 && (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{t('header.timers')}</h3>
+                  <div className="max-h-48 overflow-y-auto">
+                    <div className="flex flex-col gap-2">
+                      {timers.map(timer => (
+                        <motion.button
+                          key={timer.id}
+                          layout
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className={`px-4 py-2 rounded-lg border border-white/15 backdrop-blur-sm text-left dark:border-white/10 ${
+                            activeTimerId === timer.id
+                              ? 'text-gray-900 dark:text-white'
+                              : 'bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-gray-200/60 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-white/20 dark:hover:bg-black/20'
+                          }`}
+                          style={
+                            activeTimerId === timer.id
+                              ? {
+                                  backgroundColor: `color-mix(in srgb, ${timer.color || '#0ea5e9'} 32%, transparent)`,
+                                  borderColor: `color-mix(in srgb, ${timer.color || '#0ea5e9'} 55%, transparent)`,
+                                  backdropFilter: 'blur(10px)',
+                                  WebkitBackdropFilter: 'blur(10px)',
+                                }
+                              : {}
+                          }
+                          onClick={() => {
+                            setActiveTimerId(timer.id);
+                            setIsMenuOpen(false);
+                          }}
+                          data-insightflare-event="timer_switch"
+                          data-insightflare-event-from="mobile_menu"
+                        >
+                          {timer.name}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -518,7 +632,7 @@ export default function Header() {
               <div className="flex justify-between items-center pb-4">
                 <h2 className="text-xl font-semibold">{t('header.manage')}</h2>
                 <button
-                  className="p-1 rounded-full btn-glass-hover cursor-pointer"
+                  className="p-1 rounded-full btn-ghost cursor-pointer"
                   onClick={() => {
                     setIsManageOpen(false);
                     setEditingTimer(null);
@@ -614,47 +728,33 @@ export default function Header() {
                 </div>
               ) : (
                 <>
-                <div className="flex max-h-96 flex-col gap-2 overflow-y-auto">
-                  {timers.map(timer => (
-                    <div 
-                      key={timer.id}
-                      className="flex items-center justify-between rounded-lg bg-white/30 p-3 hover:bg-white/50 dark:bg-black/30 dark:hover:bg-black/50"
-                      style={{
-                        borderLeft: `4px solid ${timer.color || '#0ea5e9'}`
-                      }}
-                    >
-                      <div>
-                        <h3 className="font-medium">{timer.name}</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {timer.type === 'stopwatch' 
+                <div className="max-h-96 overflow-y-auto">
+                  <Reorder.Group
+                    as="div"
+                    axis="y"
+                    values={orderedTimerIds}
+                    onReorder={handleTimerReorder}
+                    className="flex flex-col gap-2"
+                  >
+                    {orderedTimerIds
+                      .map((id) => timersById.get(id))
+                      .filter((timer): timer is Timer => timer !== undefined)
+                      .map((timer) => (
+                        <TimerManageRow
+                          key={timer.id}
+                          timer={timer}
+                          summary={timer.type === 'stopwatch'
                             ? t('timer.stopwatch')
-                            : timer.type === 'worldclock' 
-                            ? `${timer.country || t('timer.worldClock')} - ${timer.timezone || ''}`
-                            : new Date(timer.targetDate).toLocaleString()
-                          }
-                        </p>
-                      </div>
-                      <div className="flex space-x-2">
-                        {/* 所有计时器都可以编辑名字和颜色 */}
-                        <button
-                          className="p-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 cursor-pointer"
-                          onClick={() => startEditTimer(timer)}
-                          data-insightflare-event="timer_edit_open"
-                          data-insightflare-event-type={timer.type || 'countdown'}
-                        >
-                          <FiEdit />
-                        </button>
-                        <button
-                          className="p-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 cursor-pointer"
-                          onClick={() => deleteTimer(timer.id)}
-                          data-insightflare-event="timer_delete"
-                          data-insightflare-event-type={timer.type || 'countdown'}
-                        >
-                          <FiX />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                            : timer.type === 'worldclock'
+                              ? `${timer.country || t('timer.worldClock')} - ${timer.timezone || ''}`
+                              : new Date(timer.targetDate).toLocaleString()}
+                          dragLabel={t('header.dragToReorder', '拖动以调整顺序')}
+                          onEdit={startEditTimer}
+                          onDelete={deleteTimer}
+                          onDragEnd={handleTimerReorderEnd}
+                        />
+                      ))}
+                  </Reorder.Group>
                 </div>
                 <div className="flex justify-start pt-4">
                   <button
@@ -699,7 +799,7 @@ export default function Header() {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">{t('header.selectLanguage')}</h2>
                 <button
-                  className="p-1 rounded-full btn-glass-hover cursor-pointer"
+                  className="p-1 rounded-full btn-ghost cursor-pointer"
                   onClick={() => setIsLanguageOpen(false)}
                 >
                   <FiX className="text-xl" />

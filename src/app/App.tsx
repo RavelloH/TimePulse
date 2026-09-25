@@ -6,6 +6,7 @@ import Home from './Home';
 import { testNotification } from '@/services/notifications';
 import notificationManager from '@/services/notificationManager';
 import { PageTransitionProvider } from '@/hooks/usePageTransition';
+import GlobalScrollbars from '@/components/layout/GlobalScrollbars';
 
 declare global {
   interface Window {
@@ -71,6 +72,7 @@ export default function App() {
         <FullscreenProvider>
           <PageTransitionProvider>
             <TimerProvider>
+              <GlobalScrollbars />
               <OfflineNotification />
               <GlobalNotificationManager />
               <Home />

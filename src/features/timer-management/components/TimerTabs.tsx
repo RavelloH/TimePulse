@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Timer } from '@/domain/timer';
 import { AutoTransition } from '@/components/ui';
+import { getScrollViewport } from '@/services/scrollbars';
 
 interface TimerTabsProps {
   timers: Timer[];
@@ -70,9 +71,10 @@ export default function TimerTabs({
 
   // 处理鼠标滚轮事件
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (tabsScrollRef.current) {
+    const viewport = getScrollViewport(tabsScrollRef.current);
+    if (viewport) {
       e.preventDefault();
-      tabsScrollRef.current.scrollLeft += e.deltaY;
+      viewport.scrollLeft += e.deltaY;
     }
   };
 
@@ -165,22 +167,24 @@ export default function TimerTabs({
       // 添加小延时，确保DOM已经更新
       setTimeout(() => {
         if (!tabsScrollRef.current) return;
+        const viewport = getScrollViewport(tabsScrollRef.current);
+        if (!viewport) return;
 
         if (showAllTabs) {
           // 在展开状态下，查找展开模式中的激活标签
           const expandedTabElement = document.getElementById(`expanded-timer-tab-${activeTimerId}`);
           if (expandedTabElement) {
-            const containerWidth = tabsScrollRef.current.clientWidth;
+            const containerWidth = viewport.clientWidth;
             const tabBounds = expandedTabElement.getBoundingClientRect();
-            const containerBounds = tabsScrollRef.current.getBoundingClientRect();
+            const containerBounds = viewport.getBoundingClientRect();
 
             // 计算标签左边缘相对于容器的位置
-            const tabLeft = tabBounds.left - containerBounds.left + tabsScrollRef.current.scrollLeft;
+            const tabLeft = tabBounds.left - containerBounds.left + viewport.scrollLeft;
             const tabRight = tabLeft + tabBounds.width;
 
             // 添加一些边距确保完全可见
             const margin = 16;
-            let scrollLeftTarget = tabsScrollRef.current.scrollLeft;
+            let scrollLeftTarget = viewport.scrollLeft;
 
             // 如果标签左边被遮挡，或者是第一个标签，确保完全显示
             if (tabLeft < margin) {
@@ -198,10 +202,10 @@ export default function TimerTabs({
             }
 
             // 确保不会滚动出边界
-            const maxScrollLeft = tabsScrollRef.current.scrollWidth - containerWidth;
+            const maxScrollLeft = viewport.scrollWidth - containerWidth;
             scrollLeftTarget = Math.max(0, Math.min(scrollLeftTarget, maxScrollLeft));
 
-            tabsScrollRef.current.scrollTo({
+            viewport.scrollTo({
               left: scrollLeftTarget,
               behavior: 'smooth'
             });
@@ -252,16 +256,18 @@ export default function TimerTabs({
         }}
         onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => {
           if (showAllTabs && tabsScrollRef.current) {
+            const viewport = getScrollViewport(tabsScrollRef.current);
+            if (!viewport) return;
             // 记录起始点击位置
             const startX = e.pageX - tabsScrollRef.current.offsetLeft;
-            const scrollLeft = tabsScrollRef.current.scrollLeft;
+            const scrollLeft = viewport.scrollLeft;
 
             const handleMouseMove = (e: MouseEvent) => {
-              if (!tabsScrollRef.current) return;
+              if (!tabsScrollRef.current || !viewport.isConnected) return;
               // 计算滚动距离
               const x = e.pageX - tabsScrollRef.current.offsetLeft;
               const walk = (x - startX) * 2; // 加快滚动速度
-              tabsScrollRef.current.scrollLeft = scrollLeft - walk;
+              viewport.scrollLeft = scrollLeft - walk;
             };
 
             const handleMouseUp = () => {
@@ -275,16 +281,18 @@ export default function TimerTabs({
         }}
         onTouchStart={(e: React.TouchEvent<HTMLDivElement>) => {
           if (tabsScrollRef.current) {
+            const viewport = getScrollViewport(tabsScrollRef.current);
+            if (!viewport) return;
             const startX = e.touches[0].clientX;
-            const scrollLeft = tabsScrollRef.current.scrollLeft;
+            const scrollLeft = viewport.scrollLeft;
 
             const handleTouchMove = (e: TouchEvent) => {
-              if (!tabsScrollRef.current) return;
+              if (!tabsScrollRef.current || !viewport.isConnected) return;
               // 阻止页面滚动
               e.preventDefault();
               const x = e.touches[0].clientX;
               const walk = (startX - x); // 滚动距离
-              tabsScrollRef.current.scrollLeft = scrollLeft + walk;
+              viewport.scrollLeft = scrollLeft + walk;
             };
 
             const handleTouchEnd = () => {

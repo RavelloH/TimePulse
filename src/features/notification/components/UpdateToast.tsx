@@ -86,7 +86,7 @@ export default function UpdateToast() {
               </div>
               <button
                 onClick={handleDismiss}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-2 rounded-full btn-glass-hover border border-white/10 dark:border-white/10 transition-colors"
               >
                 <FiX className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
               </button>

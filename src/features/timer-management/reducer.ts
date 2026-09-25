@@ -8,6 +8,7 @@ export interface TimerState {
 export type TimerAction =
   | { type: 'replace'; timers: Timer[]; activeTimerId?: string | null }
   | { type: 'select'; id: string }
+  | { type: 'reorder'; ids: string[] }
   | { type: 'upsert'; timer: Timer }
   | { type: 'update'; timer: Timer }
   | { type: 'remove'; id: string; replacement?: Timer };
@@ -23,6 +24,21 @@ export function timerReducer(state: TimerState, action: TimerAction): TimerState
       return state.timers.some((timer) => timer.id === action.id)
         ? { ...state, activeTimerId: action.id }
         : state;
+    case 'reorder': {
+      const timersById = new Map(state.timers.map((timer) => [timer.id, timer]));
+      const seenIds = new Set<string>();
+      const reorderedTimers = action.ids.flatMap((id) => {
+        const timer = timersById.get(id);
+        if (!timer || seenIds.has(id)) return [];
+        seenIds.add(id);
+        return [timer];
+      });
+      for (const timer of state.timers) {
+        if (!seenIds.has(timer.id)) reorderedTimers.push(timer);
+      }
+      if (reorderedTimers.every((timer, index) => timer === state.timers[index])) return state;
+      return { ...state, timers: reorderedTimers };
+    }
     case 'upsert': {
       const found = state.timers.some((timer) => timer.id === action.timer.id);
       return {

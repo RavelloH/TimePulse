@@ -101,7 +101,7 @@ export default function AddStopwatchModal({ onClose, onBack, embedded = false }:
             <div className="flex justify-between items-center pb-6">
               <h2 className="text-2xl font-semibold">{t('modal.addStopwatch.create', '创建正计时')}</h2>
               <button
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="p-2 rounded-full btn-glass-hover border border-white/10 dark:border-white/10"
                 onClick={onClose}
               >
                 <FiX className="text-xl" />
@@ -122,7 +122,7 @@ export default function AddStopwatchModal({ onClose, onBack, embedded = false }:
                 />
               </div>
               
-              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+              <div className="bg-green-500/10 dark:bg-green-900/20 backdrop-blur-sm border border-green-500/20 dark:border-green-400/20 p-4 rounded-lg">
                 <h3 className="font-medium text-green-800 dark:text-green-200 mb-2">
                   {t('modal.addStopwatch.description', '正计时说明')}
                 </h3>
@@ -156,7 +156,7 @@ export default function AddStopwatchModal({ onClose, onBack, embedded = false }:
             <div className="flex justify-between items-center pb-6">
               <h2 className="text-2xl font-semibold">{t('modal.addStopwatch.selectColor', '选择颜色')}</h2>
               <button
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="p-2 rounded-full btn-glass-hover border border-white/10 dark:border-white/10"
                 onClick={onClose}
               >
                 <FiX className="text-xl" />
@@ -182,8 +182,8 @@ export default function AddStopwatchModal({ onClose, onBack, embedded = false }:
               {stopwatchColors.map(color => (
                 <button
                   key={color}
-                  className={`w-full aspect-square rounded-full ${formData.color === color ? 'ring-2 ring-white' : ''}`}
-                  style={{ backgroundColor: color }}
+                  className={`w-full aspect-square rounded-full border border-white/50 backdrop-blur-sm dark:border-white/25 ${formData.color === color ? 'ring-2 ring-white' : ''}`}
+                  style={{ backgroundColor: `color-mix(in srgb, ${color} 78%, transparent)` }}
                   onClick={() => handleColorChange(color)}
                   data-insightflare-event="stopwatch_color_preset"
                   data-insightflare-event-color={color}

@@ -46,7 +46,7 @@ function isGestureIgnored(target: EventTarget | null): boolean {
 
   return Boolean(
     target.closest(
-      '[data-modal-layer="true"], [data-page-transition-ignore="true"], input, textarea, select, [contenteditable="true"]',
+      '[data-modal-layer="true"], [data-page-transition-ignore="true"], [data-timepulse-scrollbar="true"], input, textarea, select, [contenteditable="true"]',
     ),
   );
 }

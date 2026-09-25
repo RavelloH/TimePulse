@@ -66,7 +66,7 @@ const ToastAction = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitive.Action
     ref={ref}
-    className={cn('rounded-md border border-current/20 bg-transparent px-3 py-1 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/10', className)}
+    className={cn('rounded-md border border-current/20 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur-sm hover:bg-white/20 dark:bg-black/15 dark:hover:bg-black/25', className)}
     {...props}
   />
 ));
@@ -78,7 +78,7 @@ const ToastClose = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitive.Close
     ref={ref}
-    className={cn('absolute right-2 top-2 rounded-md p-1 text-current/70 opacity-0 transition-opacity hover:text-current focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary-500 group-hover:opacity-100', className)}
+    className={cn('absolute right-2 top-2 rounded-md border border-white/10 bg-white/10 p-1 text-current/70 opacity-0 backdrop-blur-sm transition-opacity hover:bg-white/20 hover:text-current focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary-500 group-hover:opacity-100 dark:border-white/10 dark:bg-black/15 dark:hover:bg-black/25', className)}
     data-toast-close=""
     {...props}
   >

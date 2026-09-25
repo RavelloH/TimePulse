@@ -24,7 +24,7 @@ const StatusPanel = React.forwardRef<HTMLDivElement, StatusPanelProps>(
     <div
       ref={ref}
       role={role ?? (status === 'error' ? 'alert' : 'status')}
-      className={cn('flex items-start gap-3 rounded-xl border px-4 py-3 text-sm', statusStyles[status], className)}
+      className={cn('flex items-start gap-3 rounded-xl border px-4 py-3 text-sm backdrop-blur-sm', statusStyles[status], className)}
       {...props}
     >
       {icon ? <div className="mt-0.5 shrink-0" aria-hidden={!title}>{icon}</div> : null}

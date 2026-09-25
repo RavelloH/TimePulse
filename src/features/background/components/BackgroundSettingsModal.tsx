@@ -204,14 +204,16 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
         {/* Tab 切换 */}
         <div className="flex space-x-2 pb-6">
           <button
-            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
-              activeTab === 'url'
-                ? 'text-white'
-                : 'bg-white/10 dark:bg-black/10 hover:bg-white/20 dark:hover:bg-black/20'
+            className={`flex-1 py-3 px-4 rounded-lg border border-white/20 dark:border-white/10 bg-white/10 dark:bg-black/10 backdrop-blur-sm font-medium transition-all ${
+              activeTab === 'url' ? 'shadow-sm' : 'hover:bg-white/20 dark:hover:bg-black/20'
             }`}
             style={
               activeTab === 'url'
-                ? { backgroundColor: accentColor }
+                ? {
+                    backgroundColor: `color-mix(in srgb, ${accentColor} 26%, transparent)`,
+                    borderColor: `color-mix(in srgb, ${accentColor} 60%, transparent)`,
+                    color: accentColor,
+                  }
                 : {}
             }
             onClick={() => selectTab('url')}
@@ -220,14 +222,16 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
             图片 URL
           </button>
           <button
-            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
-              activeTab === 'file'
-                ? 'text-white'
-                : 'bg-white/10 dark:bg:black/10 hover:bg-white/20 dark:hover:bg:black/20'
+            className={`flex-1 py-3 px-4 rounded-lg border border-white/20 dark:border-white/10 bg-white/10 dark:bg-black/10 backdrop-blur-sm font-medium transition-all ${
+              activeTab === 'file' ? 'shadow-sm' : 'hover:bg-white/20 dark:hover:bg-black/20'
             }`}
             style={
               activeTab === 'file'
-                ? { backgroundColor: accentColor }
+                ? {
+                    backgroundColor: `color-mix(in srgb, ${accentColor} 26%, transparent)`,
+                    borderColor: `color-mix(in srgb, ${accentColor} 60%, transparent)`,
+                    color: accentColor,
+                  }
                 : {}
             }
             onClick={() => selectTab('file')}
@@ -236,14 +240,16 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
             上传文件
           </button>
           <button
-            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
-              activeTab === 'preview'
-                ? 'text-white'
-                : 'bg-white/10 dark:bg:black/10 hover:bg:white/20 dark:hover:bg:black/20'
+            className={`flex-1 py-3 px-4 rounded-lg border border-white/20 dark:border-white/10 bg-white/10 dark:bg-black/10 backdrop-blur-sm font-medium transition-all ${
+              activeTab === 'preview' ? 'shadow-sm' : 'hover:bg-white/20 dark:hover:bg-black/20'
             }`}
             style={
               activeTab === 'preview'
-                ? { backgroundColor: accentColor }
+                ? {
+                    backgroundColor: `color-mix(in srgb, ${accentColor} 26%, transparent)`,
+                    borderColor: `color-mix(in srgb, ${accentColor} 60%, transparent)`,
+                    color: accentColor,
+                  }
                 : {}
             }
             onClick={() => selectTab('preview')}
@@ -263,7 +269,7 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
                 exit={{ opacity: 0, y: -10 }}
                 className="pb-4"
               >
-                <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+                <div className="p-3 bg-red-500/10 dark:bg-red-900/30 backdrop-blur-sm border border-red-500/20 dark:border-red-400/20 text-red-600 dark:text-red-400 rounded-lg">
                   {error}
                 </div>
               </motion.div>
@@ -281,7 +287,7 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
                 exit={{ opacity: 0, y: -10 }}
                 className="pb-4"
               >
-                <div className="p-3 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg">
+                <div className="p-3 bg-green-500/10 dark:bg-green-900/30 backdrop-blur-sm border border-green-500/20 dark:border-green-400/20 text-green-600 dark:text-green-400 rounded-lg">
                   {success}
                 </div>
               </motion.div>
@@ -315,8 +321,12 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
               支持 JPEG、PNG、GIF、WebP 格式。请确保图片 URL 支持跨域访问。
             </p>
             <button
-              className="w-full py-3 rounded-lg font-medium text-white transition-colors cursor-pointer disabled:opacity-50"
-              style={{ backgroundColor: accentColor }}
+              className="w-full py-3 rounded-lg border border-white/20 backdrop-blur-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
+              style={{
+                backgroundColor: `color-mix(in srgb, ${accentColor} 30%, transparent)`,
+                borderColor: `color-mix(in srgb, ${accentColor} 65%, transparent)`,
+                color: accentColor,
+              }}
               onClick={handleUrlUpload}
               disabled={isUploading || !imageUrl.trim()}
             >
@@ -406,14 +416,18 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
                   return (
                     <button
                       key={mode.value}
-                      className={`p-4 rounded-lg border-2 transition-all text-center ${
+                      className={`p-4 rounded-lg border-2 bg-white/10 dark:bg-black/10 backdrop-blur-sm transition-all text-center ${
                         backgroundMode === mode.value
                           ? 'border-current'
                           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                       style={
                         backgroundMode === mode.value
-                          ? { borderColor: accentColor, color: accentColor }
+                          ? {
+                              borderColor: `color-mix(in srgb, ${accentColor} 70%, transparent)`,
+                              backgroundColor: `color-mix(in srgb, ${accentColor} 24%, transparent)`,
+                              color: accentColor,
+                            }
                           : {}
                       }
                       onClick={() => { setBackgroundMode(mode.value); track('background_mode_change', { mode: mode.value }); }}
@@ -485,7 +499,7 @@ export default function BackgroundSettingsModal({ onClose }: BackgroundSettingsM
 
             {/* 清除背景按钮 */}
             <button
-              className="w-full py-3 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors font-medium cursor-pointer"
+              className="w-full py-3 rounded-lg border border-red-500/30 bg-red-500/10 backdrop-blur-sm text-red-600 dark:border-red-400/25 dark:bg-red-500/15 dark:text-red-400 hover:bg-red-500/20 transition-colors font-medium cursor-pointer"
               onClick={handleClearBackground}
             >
               <FiTrash2 className="inline mr-2" />

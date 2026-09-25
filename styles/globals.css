@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap");
 
 @import "tailwindcss";
+@import "overlayscrollbars/styles/overlayscrollbars.css";
 @source "../src";
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -9,6 +10,11 @@
 [class*=" ring-"],
 [class*=":ring-"] {
   --tw-ring-inset: inset;
+}
+
+button:focus-visible:not(.btn):not(.btn-primary):not(.btn-ghost):not(.btn-glass-primary):not(.btn-glass-secondary):not([class*="ring-"]) {
+  outline: 2px solid rgb(var(--color-primary));
+  outline-offset: -2px;
 }
 
 @property --logo-accent {
@@ -333,20 +339,20 @@ select,
   }
 
   .btn {
-    @apply px-4 py-2 rounded-full font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 cursor-pointer;
+    @apply px-4 py-2 rounded-full font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer;
   }
 
   .btn-primary {
-    @apply px-4 py-2 rounded-full font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 cursor-pointer bg-primary-500 hover:bg-primary-600 text-white;
+    @apply px-4 py-2 rounded-full font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer bg-primary-500 hover:bg-primary-600 text-white;
   }
 
   .btn-ghost {
-    @apply px-4 py-2 rounded-full font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 cursor-pointer bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800;
+    @apply px-4 py-2 rounded-full font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800;
   }
 
   /* 玻璃态操作按钮样式 - 用于取消、上一步等操作 */
   .btn-glass-secondary {
-    @apply px-4 py-2 rounded-lg font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 cursor-pointer;
+    @apply px-4 py-2 rounded-lg font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer;
     background: rgba(255, 255, 255, 0.15);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
@@ -372,7 +378,7 @@ select,
 
   /* 玻璃态主要操作按钮样式 - 用于确认、下一步、创建等操作 */
   .btn-glass-primary {
-    @apply px-4 py-2 rounded-lg font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 cursor-pointer;
+    @apply px-4 py-2 rounded-lg font-medium transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer;
     background: rgba(var(--color-primary), 0.3);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
@@ -395,6 +401,13 @@ select,
   /* 玻璃态悬停效果 - 主题色半透明背景 */
   .btn-glass-hover {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(255, 255, 255, 0.08);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  .dark .btn-glass-hover {
+    background: rgba(0, 0, 0, 0.16);
   }
 
   .btn-glass-hover:hover {
@@ -405,6 +418,20 @@ select,
 
   .dark .btn-glass-hover:hover {
     background: rgba(var(--color-primary), 0.3);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .btn-ghost:hover {
+    background: rgba(var(--color-primary), 0.08);
+  }
+
+  .dark .btn-ghost:hover {
+    background: rgba(var(--color-primary), 0.16);
   }
 
   .digit-column {
@@ -708,74 +735,141 @@ select,
   display: none; /* Chrome, Safari, Opera */
 }
 
-/* 自定义滚动条样式 - 只隐藏页面主滚动条 */
-/* 隐藏html和body的滚动条（页面主滚动条） */
+/* Non-Safari browsers use OverlayScrollbars; the native rails remain hidden. */
+html:not([data-native-scrollbars="true"]) *,
+html:not([data-native-scrollbars="true"]) {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html:not([data-native-scrollbars="true"]) *::-webkit-scrollbar,
+html:not([data-native-scrollbars="true"])::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Keep the existing native scrollbar appearance on Safari / Apple platforms. */
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
-  width: 0px;
+  width: 0;
   background: transparent;
 }
 
 html::-webkit-scrollbar-track,
-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+body::-webkit-scrollbar-track,
 html::-webkit-scrollbar-thumb,
 body::-webkit-scrollbar-thumb {
   background: transparent;
 }
 
-/* Firefox 滚动条样式 - 隐藏html和body的滚动条 */
 html,
 body {
   scrollbar-width: none;
-  -ms-overflow-style: none; /* IE滚动条样式 */
+  -ms-overflow-style: none;
 }
 
-/* 深色模式下页面主滚动条 - 保持隐藏 */
-.dark html::-webkit-scrollbar-thumb,
-.dark body::-webkit-scrollbar-thumb {
-  background: transparent;
-}
-
-.dark html::-webkit-scrollbar-thumb:hover,
-.dark body::-webkit-scrollbar-thumb:hover {
-  background: transparent;
-}
-
-/* 为其他元素提供默认的滚动条样式 - 使用主题色 */
-*:not(body)::-webkit-scrollbar {
+html[data-native-scrollbars="true"] *:not(body)::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-*:not(body)::-webkit-scrollbar-track {
+html[data-native-scrollbars="true"] *:not(body)::-webkit-scrollbar-track {
   background: rgba(var(--color-primary, 14, 165, 233), 0.1);
   border-radius: 4px;
 }
 
-*:not(body)::-webkit-scrollbar-thumb {
+html[data-native-scrollbars="true"] *:not(body)::-webkit-scrollbar-thumb {
   background: rgba(var(--color-primary, 14, 165, 233), 0.4);
   border-radius: 4px;
   transition: background-color 0.2s ease;
 }
 
-*:not(body)::-webkit-scrollbar-thumb:hover {
+html[data-native-scrollbars="true"] *:not(body)::-webkit-scrollbar-thumb:hover {
   background: rgba(var(--color-primary, 14, 165, 233), 0.6);
 }
 
-/* 深色模式下其他元素的滚动条 - 使用深色模式主题色 */
-.dark *:not(body)::-webkit-scrollbar-track {
+html.dark[data-native-scrollbars="true"] *:not(body)::-webkit-scrollbar-track {
   background: rgba(var(--color-primary, 56, 189, 248), 0.15);
 }
 
-.dark *:not(body)::-webkit-scrollbar-thumb {
+html.dark[data-native-scrollbars="true"] *:not(body)::-webkit-scrollbar-thumb {
   background: rgba(var(--color-primary, 56, 189, 248), 0.5);
 }
 
-.dark *:not(body)::-webkit-scrollbar-thumb:hover {
+html.dark[data-native-scrollbars="true"] *:not(body)::-webkit-scrollbar-thumb:hover {
   background: rgba(var(--color-primary, 56, 189, 248), 0.7);
+}
+
+html[data-native-scrollbars="true"] .scrollbar-hide,
+html[data-native-scrollbars="true"] .hide-horizontal-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html[data-native-scrollbars="true"] .scrollbar-hide::-webkit-scrollbar,
+html[data-native-scrollbars="true"] .hide-horizontal-scrollbar::-webkit-scrollbar:horizontal {
+  display: none;
+}
+
+.os-theme-timepulse {
+  --os-size: 8px;
+  --os-padding-perpendicular: 1px;
+  --os-padding-axis: 1px;
+  --os-track-border-radius: 999px;
+  --os-handle-border-radius: 999px;
+  --os-handle-bg: rgba(var(--color-primary), 0.42);
+  --os-handle-bg-hover: rgba(var(--color-primary), 0.62);
+  --os-handle-bg-active: rgba(var(--color-primary), 0.72);
+  --os-handle-perpendicular-size: 0.25rem;
+  --os-handle-perpendicular-size-hover: 0.45rem;
+  --os-handle-perpendicular-size-active: 0.45rem;
+  --os-handle-interactive-area-offset: 4px;
+  --os-track-bg: transparent;
+}
+
+.os-theme-timepulse.os-scrollbar {
+  transition:
+    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 220ms linear,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    top 150ms,
+    right 150ms,
+    bottom 150ms,
+    left 150ms;
+}
+
+.os-theme-timepulse.os-scrollbar-horizontal {
+  transform-origin: center bottom;
+  transform: translateY(0) scaleY(1);
+}
+
+.os-theme-timepulse.os-scrollbar-vertical {
+  transform-origin: right center;
+  transform: translateX(0) scaleX(1);
+}
+
+.os-theme-timepulse.os-scrollbar-auto-hide.os-scrollbar-auto-hide-hidden.os-scrollbar-horizontal {
+  transform: translateY(5px) scaleY(0.72);
+}
+
+.os-theme-timepulse.os-scrollbar-auto-hide.os-scrollbar-auto-hide-hidden.os-scrollbar-vertical {
+  transform: translateX(5px) scaleX(0.72);
+}
+
+.os-theme-timepulse.os-scrollbar .os-scrollbar-handle {
+  transition:
+    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 180ms ease,
+    width 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .os-theme-timepulse.os-scrollbar,
+  .os-theme-timepulse .os-scrollbar-handle {
+    transition: none !important;
+  }
 }
 
 /* 平滑滚动 - 添加后备方案 */

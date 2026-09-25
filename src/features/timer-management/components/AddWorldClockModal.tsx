@@ -119,7 +119,7 @@ export default function AddWorldClockModal({ onClose, onBack, embedded = false }
             <div className="flex justify-between items-center pb-6">
               <h2 className="text-2xl font-semibold">{t('modal.addWorldClock.create', '创建世界时间')}</h2>
               <button
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="p-2 rounded-full btn-glass-hover border border-white/10 dark:border-white/10"
                 onClick={onClose}
               >
                 <FiX className="text-xl" />
@@ -139,7 +139,7 @@ export default function AddWorldClockModal({ onClose, onBack, embedded = false }
               {formData.timezone && (
                 <>
                   <div className="pb-4">
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <div className="bg-blue-500/10 dark:bg-blue-900/20 backdrop-blur-sm border border-blue-500/20 dark:border-blue-400/20 p-4 rounded-lg">
                     <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
                       {t('modal.addWorldClock.selectedTimezone', '已选择时区')}
                     </h3>
@@ -194,7 +194,7 @@ export default function AddWorldClockModal({ onClose, onBack, embedded = false }
             <div className="flex justify-between items-center pb-6">
                 <h2 className="text-2xl font-semibold">{t('modal.addWorldClock.selectColor', '选择颜色')}</h2>
                 <button
-                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="p-2 rounded-full btn-glass-hover border border-white/10 dark:border-white/10"
                   onClick={onClose}
                 >
                   <FiX className="text-xl" />
@@ -220,8 +220,8 @@ export default function AddWorldClockModal({ onClose, onBack, embedded = false }
                 {worldClockColors.map(color => (
                   <button
                     key={color}
-                    className={`w-full aspect-square rounded-full ${formData.color === color ? 'ring-2 ring-white' : ''}`}
-                    style={{ backgroundColor: color }}
+                    className={`w-full aspect-square rounded-full border border-white/50 backdrop-blur-sm dark:border-white/25 ${formData.color === color ? 'ring-2 ring-white' : ''}`}
+                    style={{ backgroundColor: `color-mix(in srgb, ${color} 78%, transparent)` }}
                     onClick={() => handleColorChange(color)}
                     data-insightflare-event="worldclock_color_preset"
                     data-insightflare-event-color={color}

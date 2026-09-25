@@ -50,7 +50,7 @@ export default function TimerTypeModal({ onClose, onSelectType, embedded = false
         <div className="flex justify-between items-center pb-6">
           <h2 className="text-2xl font-semibold">{t('timer.selectType', '选择计时器类型')}</h2>
           <button
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="p-2 rounded-full btn-glass-hover border border-white/10 dark:border-white/10"
             onClick={onClose}
           >
             <FiX className="text-xl" />
@@ -61,11 +61,10 @@ export default function TimerTypeModal({ onClose, onSelectType, embedded = false
           {timerTypes.map((type) => {
             const IconComponent = type.icon;
             return (
-              <motion.button
+              <button
+                type="button"
                 key={type.id}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full p-4 rounded-xl glass-card hover:bg-white/10 dark:hover:bg-black/10 transition-colors text-left"
+                className="w-full rounded-xl glass-card border border-transparent p-4 text-left transition-colors hover:border-primary-500/30 hover:bg-primary-500/10 active:bg-primary-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:hover:bg-primary-500/15"
                 onClick={() => onSelectType(type.id)}
                 data-insightflare-event="timer_type_select"
                 data-insightflare-event-type={type.id}
@@ -73,7 +72,7 @@ export default function TimerTypeModal({ onClose, onSelectType, embedded = false
                 <div className="flex items-center space-x-4">
                   <div 
                     className="w-12 h-12 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: type.color + '20', color: type.color }}
+                    style={{ backgroundColor: type.color + '20', color: type.color, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
                   >
                     <IconComponent className="text-xl" />
                   </div>
@@ -84,7 +83,7 @@ export default function TimerTypeModal({ onClose, onSelectType, embedded = false
                     </p>
                   </div>
                 </div>
-              </motion.button>
+              </button>
             );
           })}
         </div>
@@ -114,7 +113,7 @@ export default function TimerTypeModal({ onClose, onSelectType, embedded = false
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="glass-card w-full max-w-md m-4 p-6 rounded-2xl"
+        className="glass-card w-full max-w-md m-4 p-6 rounded-2xl max-h-[90vh] overflow-x-hidden overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         {content}

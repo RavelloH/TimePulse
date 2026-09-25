@@ -36,13 +36,13 @@ export default function LapTimesModal({ onClose, laps, timerColor }: LapTimesMod
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="glass-card w-full max-w-md m-4 p-6 rounded-2xl"
+          className="glass-card w-full max-w-md m-4 p-6 rounded-2xl max-h-[90vh] overflow-x-hidden overflow-y-auto"
           onClick={e => e.stopPropagation()}
         >
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold">{t('lap.title')}</h2>
             <button
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="p-2 rounded-full btn-glass-hover border border-white/10 dark:border-white/10"
               onClick={onClose}
             >
               <FiX className="text-xl" />
@@ -86,7 +86,7 @@ export default function LapTimesModal({ onClose, laps, timerColor }: LapTimesMod
             {t('lap.title')}
           </h2>
           <button
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="p-2 rounded-full btn-glass-hover border border-white/10 dark:border-white/10"
             onClick={onClose}
           >
             <FiX className="text-xl" />
@@ -108,7 +108,7 @@ export default function LapTimesModal({ onClose, laps, timerColor }: LapTimesMod
             return (
               <motion.div
                 key={lap.id}
-                className="flex justify-between items-center p-3 rounded-lg bg-white/5 dark:bg-black/5"
+                className="flex justify-between items-center p-3 rounded-lg border border-white/10 dark:border-white/10 bg-white/5 dark:bg-black/5 backdrop-blur-sm"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}

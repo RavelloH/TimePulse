@@ -263,7 +263,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
         <div className="flex justify-between items-center pb-6">
           <h2 className="text-2xl font-semibold">{t('login.title')}</h2>
           <button
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+            className="p-2 rounded-full btn-glass-hover border border-white/10 dark:border-white/10 cursor-pointer"
             onClick={onClose}
           >
             <FiX className="text-xl" />
@@ -278,7 +278,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
         <div className="flow-root">
         {/* 离线状态提示 */}
         {isOffline && (
-          <div className="mb-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-lg flex items-center">
+          <div className="mb-4 p-3 bg-amber-500/10 dark:bg-amber-900/30 backdrop-blur-sm border border-amber-500/20 dark:border-amber-400/20 text-yellow-700 dark:text-yellow-300 rounded-lg flex items-center">
             <FiWifiOff className="mr-2 flex-shrink-0" />
             <span>您当前处于离线模式，同步功能不可用。请恢复网络连接后重试。</span>
           </div>
@@ -286,13 +286,13 @@ export default function LoginModal({ onClose }: LoginModalProps) {
         
         {/* 错误和成功提示 */}
         {errorMessage && (
-          <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg">
+          <div className="mb-4 p-3 bg-red-500/10 dark:bg-red-900/30 backdrop-blur-sm border border-red-500/20 dark:border-red-400/20 text-red-700 dark:text-red-300 rounded-lg">
             {errorMessage}
           </div>
         )}
         
         {successMessage && (
-          <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg">
+          <div className="mb-4 p-3 bg-green-500/10 dark:bg-green-900/30 backdrop-blur-sm border border-green-500/20 dark:border-green-400/20 text-green-700 dark:text-green-300 rounded-lg">
             {successMessage}
           </div>
         )}
@@ -304,9 +304,9 @@ export default function LoginModal({ onClose }: LoginModalProps) {
           
           {/* 切换创建/登录选项卡 */}
           {status === 'idle' && (
-            <div className="flex mb-4">
+            <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl border border-gray-200/50 bg-white/5 p-1 backdrop-blur-sm dark:border-white/10 dark:bg-black/10">
               <button
-                className={`flex-1 py-2 border-b-2 ${!showLogin ? 'border-primary-500 text-primary-500' : 'border-gray-300 text-gray-500'}`}
+                className={`rounded-lg border px-3 py-2 backdrop-blur-sm transition-colors ${!showLogin ? 'border-primary-500/35 bg-primary-500/15 text-primary-600 dark:text-primary-300' : 'border-transparent bg-white/5 text-gray-500 hover:bg-white/10 dark:bg-black/10 dark:text-gray-300 dark:hover:bg-black/20'}`}
                 onClick={() => {
                   setContentDirection(-1);
                   setShowLogin(false);
@@ -315,7 +315,7 @@ export default function LoginModal({ onClose }: LoginModalProps) {
                 {t('login.generateId')}
               </button>
               <button
-                className={`flex-1 py-2 border-b-2 ${showLogin ? 'border-primary-500 text-primary-500' : 'border-gray-300 text-gray-500'}`}
+                className={`rounded-lg border px-3 py-2 backdrop-blur-sm transition-colors ${showLogin ? 'border-primary-500/35 bg-primary-500/15 text-primary-600 dark:text-primary-300' : 'border-transparent bg-white/5 text-gray-500 hover:bg-white/10 dark:bg-black/10 dark:text-gray-300 dark:hover:bg-black/20'}`}
                 onClick={() => {
                   setContentDirection(1);
                   setShowLogin(true);

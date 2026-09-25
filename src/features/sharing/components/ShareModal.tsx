@@ -113,7 +113,7 @@ export default function ShareModal({ onClose }: ShareModalProps) {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold">{t('share.title')}</h2>
           <button
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="p-2 rounded-full btn-glass-hover border border-white/10 dark:border-white/10"
             onClick={onClose}
           >
             <FiX className="text-xl" />
@@ -142,9 +142,15 @@ export default function ShareModal({ onClose }: ShareModalProps) {
               className="flex-1 px-4 py-2 rounded-l-lg bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-white/20 dark:border-white/10 focus:ring-2 focus:ring-primary-500 focus:outline-none"
             />
             <button
-              className={`px-4 py-2 rounded-r-lg text-white`}
-              style={{ 
-                backgroundColor: copied ? '#10b981' : accentColor 
+              className="px-4 py-2 rounded-r-lg border border-white/20 backdrop-blur-sm"
+              style={{
+                backgroundColor: copied
+                  ? 'rgba(16, 185, 129, 0.28)'
+                  : `color-mix(in srgb, ${accentColor} 32%, transparent)`,
+                borderColor: copied ? 'rgba(16, 185, 129, 0.5)' : `color-mix(in srgb, ${accentColor} 60%, transparent)`,
+                color: copied ? '#047857' : accentColor,
+                WebkitBackdropFilter: 'blur(10px)',
+                backdropFilter: 'blur(10px)',
               }}
               onClick={handleCopy}
               data-insightflare-event="share_link_copy"

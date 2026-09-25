@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from 'react';
+import { useCallback, useState, type ChangeEvent } from 'react';
 import { motion } from 'framer-motion';
 import { FiX, FiCalendar, FiClock, FiGlobe, FiCheck } from 'react-icons/fi';
 import { HexColorPicker } from 'react-colorful';
@@ -89,10 +89,10 @@ export default function AddTimerModal({ onClose, onBack, embedded = false }: Add
   };
   
   // 处理时区选择
-  const handleTimezoneSelect = (timezone: string, _city: string, _country: string) => {
+  const handleTimezoneSelect = useCallback((timezone: string, _city: string, _country: string) => {
     setFormData(prev => ({ ...prev, timezone }));
     setShowTimezoneModal(false);
-  };
+  }, []);
 
   // 选择节假日
   const handleSelectHoliday = (holiday: Holiday) => {
@@ -137,7 +137,7 @@ export default function AddTimerModal({ onClose, onBack, embedded = false }: Add
             <div className="flex justify-between items-center pb-6">
               <h2 className="text-2xl font-semibold">{t('modal.countdown.create', '创建倒计时')}</h2>
               <button
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="p-2 rounded-full btn-glass-hover border border-white/10 dark:border-white/10"
                 onClick={onClose}
               >
                 <FiX className="text-xl" />
@@ -168,22 +168,24 @@ export default function AddTimerModal({ onClose, onBack, embedded = false }: Add
                   aria-hidden={!showHolidaysList}
                   inert={!showHolidaysList}
                 >
-                  <div className="bg-white/10 dark:bg-black/10 rounded-xl p-3 max-h-60 overflow-y-auto flex flex-col gap-2">
-                    {holidaysList.map((holiday, index) => (
-                      <button
-                        key={index}
-                        className="w-full rounded-lg p-2 flex items-center justify-between hover:bg-white/20 dark:hover:bg-black/20 transition-colors"
-                        onClick={() => handleSelectHoliday(holiday)}
-                        data-insightflare-event="holiday_select"
-                        data-insightflare-event-holiday={holiday.name}
-                      >
-                        <span>{holiday.name}</span>
-                        <span
-                          className="w-4 h-4 rounded-full"
-                          style={{ backgroundColor: holiday.color }}
-                        ></span>
-                      </button>
-                    ))}
+                  <div className="bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-white/10 dark:border-white/10 rounded-xl p-3 max-h-60 overflow-y-auto">
+                    <div className="flex flex-col gap-2">
+                      {holidaysList.map((holiday, index) => (
+                        <button
+                          key={index}
+                          className="w-full rounded-lg p-2 flex items-center justify-between bg-white/5 dark:bg-black/10 backdrop-blur-sm border border-white/10 dark:border-white/10 hover:bg-white/15 dark:hover:bg-black/20 transition-colors"
+                          onClick={() => handleSelectHoliday(holiday)}
+                          data-insightflare-event="holiday_select"
+                          data-insightflare-event-holiday={holiday.name}
+                        >
+                          <span>{holiday.name}</span>
+                          <span
+                            className="w-4 h-4 rounded-full"
+                            style={{ backgroundColor: holiday.color }}
+                          ></span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </AutoResizer>
@@ -279,7 +281,7 @@ export default function AddTimerModal({ onClose, onBack, embedded = false }: Add
             <div className="flex justify-between items-center pb-6">
               <h2 className="text-2xl font-semibold">{t('modal.countdown.selectColor', '选择颜色')}</h2>
               <button
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="p-2 rounded-full btn-glass-hover border border-white/10 dark:border-white/10"
                 onClick={onClose}
               >
                 <FiX className="text-xl" />
@@ -305,8 +307,8 @@ export default function AddTimerModal({ onClose, onBack, embedded = false }: Add
               {presetColors.slice(0, 20).map(color => (
                 <button
                   key={color}
-                  className={`w-full aspect-square rounded-full ${formData.color === color ? 'ring-2 ring-white' : ''}`}
-                  style={{ backgroundColor: color }}
+                  className={`w-full aspect-square rounded-full border border-white/50 backdrop-blur-sm dark:border-white/25 ${formData.color === color ? 'ring-2 ring-white' : ''}`}
+                  style={{ backgroundColor: `color-mix(in srgb, ${color} 78%, transparent)` }}
                   onClick={() => handleColorChange(color)}
                   data-insightflare-event="countdown_color_preset"
                   data-insightflare-event-color={color}

@@ -222,33 +222,35 @@ const CustomSelect = forwardRef<HTMLDivElement, CustomSelectProps>(function Cust
               backdropFilter: 'blur(8px)',
             }}
           >
-            {options.map((option) => (
-              <div
-                key={option.value}
-                className={`px-4 py-2 cursor-pointer flex items-center justify-between transition-colors duration-150
-                  ${value === option.value
-                    ? 'text-white font-medium'
-                    : 'text-gray-800 dark:text-gray-100 hover:bg-white/10 dark:hover:bg-black/20'}`}
-                onClick={() => handleSelect(option.value, option.label)}
-                role="option"
-                aria-selected={value === option.value}
-                tabIndex={0}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    handleSelect(option.value, option.label);
-                  }
-                }}
-                style={value === option.value ? {
-                  background: `linear-gradient(90deg, ${accentColor}99, ${accentColor}40)`,
-                } : {}}
-              >
-                <span>{option.label}</span>
-                {value === option.value && (
-                  <FiCheck className="text-white" />
-                )}
-              </div>
-            ))}
+            <div>
+              {options.map((option) => (
+                <div
+                  key={option.value}
+                  className={`px-4 py-2 cursor-pointer flex items-center justify-between transition-colors duration-150
+                    ${value === option.value
+                      ? 'text-white font-medium'
+                      : 'text-gray-800 dark:text-gray-100 hover:bg-white/10 dark:hover:bg-black/20'}`}
+                  onClick={() => handleSelect(option.value, option.label)}
+                  role="option"
+                  aria-selected={value === option.value}
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      handleSelect(option.value, option.label);
+                    }
+                  }}
+                  style={value === option.value ? {
+                    background: `linear-gradient(90deg, ${accentColor}99, ${accentColor}40)`,
+                  } : {}}
+                >
+                  <span>{option.label}</span>
+                  {value === option.value && (
+                    <FiCheck className="text-white" />
+                  )}
+                </div>
+              ))}
+            </div>
           </motion.div>
           </AutoResizer>
         ) : null}

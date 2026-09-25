@@ -123,7 +123,7 @@ export default function Footer() {
                 href="https://github.com/RavelloH/TimePulse" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-3 py-1.5 text-sm rounded-full bg-gray-600 hover:bg-gray-700 dark:bg-white/20 dark:hover:bg.white/30 text-white dark:text-white transition-colors"
+                className="btn-glass-secondary inline-flex items-center rounded-full px-3 py-1.5 text-sm transition-colors"
                 data-insightflare-event="github_visit"
               >
                 <FiGithub className="mr-1 md:mr-2" /> {t('footer.gitHubRepo', 'GitHub 仓库')}
@@ -149,12 +149,12 @@ export default function Footer() {
               <FiClock className="mr-2" /> {t('footer.runLog', '运行日志')}
             </h2>
             
-            <div className="bg-gray-200/50 dark:bg-black/30 rounded-lg p-2 mb-2">
+            <div className="bg-gray-200/50 dark:bg-black/30 backdrop-blur-sm border border-gray-200/40 dark:border-white/10 rounded-lg p-2 mb-2">
               <p className="text-xs font-mono">{t('footer.currentTime', '当前时间')}: {currentTime}</p>
             </div>
             
             {/* 减少移动设备上的日志高度 */}
-            <div className="h-24 sm:h-32 md:h-48 overflow-y-auto bg-gray-200/50 dark:bg-black/30 rounded-lg p-2 font-mono text-xs">
+            <div className="h-24 sm:h-32 md:h-48 overflow-y-auto bg-gray-200/50 dark:bg-black/30 backdrop-blur-sm border border-gray-200/40 dark:border-white/10 rounded-lg p-2 font-mono text-xs">
               <AutoTransition transitionKey={logs.length > 0 ? `logs-${logs.length}` : 'logs-empty'} initial={false}>
                 {logs.length > 0 ? (
                   <div>

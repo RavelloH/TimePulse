@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { normalizeLanguage, type Language } from './types';
 
 type TranslationTree = Record<string, unknown>;
@@ -53,11 +53,11 @@ export function useTranslation(): {
     return () => { cancelled = true; };
   }, []);
 
-  const t: TranslationFunction = (key, defaultValue = '') => {
+  const t = useCallback<TranslationFunction>((key, defaultValue = '') => {
     if (isLoading) return defaultValue;
     const value = getNestedValue(translations, key);
     return typeof value === 'string' || typeof value === 'number' ? String(value) : (defaultValue || key);
-  };
+  }, [isLoading, translations]);
 
   const changeLanguage = (language: Language) => {
     const url = new URL(window.location.href);

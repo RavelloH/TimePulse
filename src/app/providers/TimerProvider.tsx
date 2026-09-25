@@ -37,6 +37,7 @@ export interface TimerContextValue {
   timers: Timer[];
   activeTimerId: string | null;
   setActiveTimerId: (id: string | null) => void;
+  reorderTimers: (orderedIds: string[]) => void;
   addTimer: (timerData: TimerInput) => string;
   deleteTimer: (id: string) => void;
   updateTimer: (id: string, updatedData: TimerUpdate) => void;
@@ -197,6 +198,10 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     if (id) dispatch({ type: 'select', id });
   }, []);
 
+  const reorderTimers = useCallback((orderedIds: string[]) => {
+    dispatch({ type: 'reorder', ids: orderedIds });
+  }, []);
+
   const addTimer = useCallback((timerData: TimerInput): string => {
     const newTimer = parseTimerInput(timerData);
     dispatch({ type: 'upsert', timer: newTimer });
@@ -231,13 +236,14 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     timers,
     activeTimerId,
     setActiveTimerId,
+    reorderTimers,
     addTimer,
     deleteTimer,
     updateTimer,
     getActiveTimer,
     holidaysList,
     checkAndUpdateDefaultTimer,
-  }), [activeTimerId, addTimer, checkAndUpdateDefaultTimer, deleteTimer, getActiveTimer, holidaysList, setActiveTimerId, timers, updateTimer]);
+  }), [activeTimerId, addTimer, checkAndUpdateDefaultTimer, deleteTimer, getActiveTimer, holidaysList, reorderTimers, setActiveTimerId, timers, updateTimer]);
 
   return <TimerContext.Provider value={value}>{children}</TimerContext.Provider>;
 }

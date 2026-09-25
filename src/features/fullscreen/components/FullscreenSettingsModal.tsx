@@ -59,7 +59,7 @@ export default function FullscreenSettingsModal({ onClose }: FullscreenSettingsM
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="w-full max-w-md p-6 rounded-2xl bg-white/30 dark:bg-black/30 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-2xl"
+        className="w-full max-w-md p-6 rounded-2xl max-h-[90vh] overflow-x-hidden overflow-y-auto bg-white/30 dark:bg-black/30 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         {/* 标题栏 */}

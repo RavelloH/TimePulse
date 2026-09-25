@@ -18,10 +18,11 @@ import type { Timer } from '../domain/timer';
 export default function Home() {
   const { timers, activeTimerId, setActiveTimerId, addTimer } = useTimers();
   const { theme, accentColor } = useTheme();
-  const { isFullscreen } = useFullscreen();
+  const { isFullscreen, isHeaderVisible } = useFullscreen();
   const { isAbout, direction } = usePageTransition();
   const { t } = useTranslation();
   const showMainPage = !isAbout || isFullscreen;
+  const [headerHeight, setHeaderHeight] = useState(0);
   
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isBackgroundSettingsOpen, setIsBackgroundSettingsOpen] = useState(false);
@@ -80,7 +81,7 @@ export default function Home() {
 
   return (
     <>
-      <Layout>
+      <Layout onHeaderHeightChange={setHeaderHeight}>
         <GradientBackground />
         <CustomBackground />
 
@@ -111,14 +112,17 @@ export default function Home() {
               exit="exit"
               className="absolute inset-0 z-10"
             >
-              <main
+              <motion.main
+                initial={false}
+                animate={{ y: isFullscreen && !isHeaderVisible ? 0 : headerHeight / 2 }}
+                transition={{ y: { duration: 0.45, ease: 'easeInOut' } }}
                 className={`relative flex h-full min-h-0 flex-col items-center justify-center ${isFullscreen ? '' : 'py-12'}`}
                 data-page-view="main"
               >
                 <AutoResizer className="flex w-full items-center justify-center" initial={false} overflow="visible">
                   <TimerDisplay />
                 </AutoResizer>
-              </main>
+              </motion.main>
             </motion.div>
           ) : null}
         </AnimatePresence>

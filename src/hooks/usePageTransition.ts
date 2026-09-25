@@ -46,9 +46,43 @@ function isGestureIgnored(target: EventTarget | null): boolean {
 
   return Boolean(
     target.closest(
-      '[data-modal-layer="true"], [data-page-transition-ignore="true"], [data-timepulse-scrollbar="true"], input, textarea, select, [contenteditable="true"]',
+      '[data-modal-layer="true"], [data-page-transition-ignore="true"], input, textarea, select, [contenteditable="true"]',
     ),
   );
+}
+
+function isWithinManagedScrollContainer(target: EventTarget | null): boolean {
+  return target instanceof Element && Boolean(target.closest('[data-timepulse-scrollbar="true"]'));
+}
+
+function canScrollVerticallyWithinTarget(target: EventTarget | null, deltaY: number): boolean {
+  if (!(target instanceof Element) || deltaY === 0) return false;
+
+  const scrollableAncestors: HTMLElement[] = [];
+  let element: Element | null = target;
+  while (element) {
+    if (element instanceof HTMLElement) scrollableAncestors.push(element);
+    element = element.parentElement;
+  }
+
+  // OverlayScrollbars moves scrolling to its viewport, which is a sibling of
+  // the scrollbar track and may not be an ancestor of the original event target.
+  const managedHost = target.closest<HTMLElement>('[data-timepulse-scrollbar="true"]');
+  const overlayViewport = managedHost?.querySelector<HTMLElement>('.os-viewport');
+  if (overlayViewport && !scrollableAncestors.includes(overlayViewport)) {
+    scrollableAncestors.unshift(overlayViewport);
+  }
+
+  return scrollableAncestors.some((scrollable) => {
+    const overflowY = window.getComputedStyle(scrollable).overflowY;
+    if (!/^(auto|scroll|overlay)$/.test(overflowY)) return false;
+    if (scrollable.scrollHeight <= scrollable.clientHeight + 1) return false;
+
+    const maxScrollTop = scrollable.scrollHeight - scrollable.clientHeight;
+    return deltaY < 0
+      ? scrollable.scrollTop > 1
+      : scrollable.scrollTop < maxScrollTop - 1;
+  });
 }
 
 export function PageTransitionProvider({ children }: { children: ReactNode }) {
@@ -111,7 +145,8 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
         isFullscreen ||
         document.fullscreenElement ||
         event.ctrlKey ||
-        isGestureIgnored(event.target)
+        isGestureIgnored(event.target) ||
+        canScrollVerticallyWithinTarget(event.target, event.deltaY)
       ) {
         return;
       }
@@ -138,7 +173,8 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
         isFullscreen ||
         document.fullscreenElement ||
         event.touches.length !== 1 ||
-        isGestureIgnored(event.target)
+        isGestureIgnored(event.target) ||
+        isWithinManagedScrollContainer(event.target)
       ) {
         touchStartYRef.current = null;
         touchTargetRef.current = null;
@@ -150,7 +186,11 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
     };
 
     const handleTouchMove = (event: TouchEvent) => {
-      if (touchStartYRef.current !== null && !isGestureIgnored(touchTargetRef.current)) {
+      if (
+        touchStartYRef.current !== null &&
+        !isGestureIgnored(touchTargetRef.current) &&
+        !isWithinManagedScrollContainer(touchTargetRef.current)
+      ) {
         event.preventDefault();
       }
     };

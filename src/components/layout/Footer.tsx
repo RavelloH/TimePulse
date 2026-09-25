@@ -155,25 +155,27 @@ export default function Footer() {
             
             {/* 减少移动设备上的日志高度 */}
             <div className="h-24 sm:h-32 md:h-48 overflow-y-auto bg-gray-200/50 dark:bg-black/30 backdrop-blur-sm border border-gray-200/40 dark:border-white/10 rounded-lg p-2 font-mono text-xs">
-              <AutoTransition transitionKey={logs.length > 0 ? `logs-${logs.length}` : 'logs-empty'} initial={false}>
-                {logs.length > 0 ? (
-                  <div>
-                    {logs.map((log, index) => (
-                      <AutoTransition
-                        key={`${index}-${log}`}
-                        transitionKey={`${index}-${log}`}
-                        type="slideUp"
-                        initial={false}
-                        className="mb-1 break-words"
-                      >
-                        <span>{log}</span>
-                      </AutoTransition>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-400">{t('footer.noLogs', '暂无日志记录...')}</p>
-                )}
-              </AutoTransition>
+              <div>
+                <AutoTransition transitionKey={logs.length > 0 ? `logs-${logs.length}` : 'logs-empty'} initial={false}>
+                  {logs.length > 0 ? (
+                    <div>
+                      {logs.map((log, index) => (
+                        <AutoTransition
+                          key={`${index}-${log}`}
+                          transitionKey={`${index}-${log}`}
+                          type="slideUp"
+                          initial={false}
+                          className="mb-1 break-words"
+                        >
+                          <span>{log}</span>
+                        </AutoTransition>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400">{t('footer.noLogs', '暂无日志记录...')}</p>
+                  )}
+                </AutoTransition>
+              </div>
             </div>
           </div>
         </div>

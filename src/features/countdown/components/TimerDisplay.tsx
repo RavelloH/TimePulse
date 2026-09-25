@@ -21,7 +21,7 @@ import {
 import { splitCalendarDuration } from '@/domain/time';
 import { getNextTimerUpdateDelay } from '../timerSchedule';
 import { AutoResizer, AutoTransition, type TransitionType } from '@/components/ui';
-import { ConfirmDialog } from '@/components/composed';
+import StopwatchStopConfirmModal from '@/features/stopwatch/components/StopwatchStopConfirmModal';
 
 type DisplayTime = {
   years: number;
@@ -110,6 +110,8 @@ function CalendarTimeRows({
     return timeValue[unit.key] > 0;
   });
   const hasCalendarUnits = calendarUnits.length > 0;
+  const hasOnlyDays = calendarUnits.length === 1 && calendarUnits[0].key === 'days';
+  const separatorVerticalOffset = labelFontSize === 'small' ? 14 : labelFontSize === 'large' ? 18 : 16;
 
   const calendarItems = calendarUnits.flatMap((unit, index) => [
     ...(index > 0 ? [{ kind: 'separator' as const, key: `date-separator-${unit.key}` }] : []),
@@ -123,7 +125,8 @@ function CalendarTimeRows({
       aria-hidden="true"
       layout="position"
       transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
-      className={`${separatorClassName} font-thin text-gray-400`}
+      className={`relative ${separatorClassName} font-thin text-gray-400`}
+      style={{ top: -separatorVerticalOffset }}
     >
       :
     </motion.span>
@@ -162,7 +165,7 @@ function CalendarTimeRows({
 
   return (
     <motion.div
-      className="flex flex-col items-center justify-center lg:flex-row"
+      className={`flex items-center justify-center ${hasOnlyDays ? 'flex-row sm:flex-col lg:flex-row' : 'flex-col lg:flex-row'}`}
       layout="position"
       animate={{ rowGap: hasCalendarUnits ? 4 : 0 }}
       transition={{
@@ -239,7 +242,8 @@ function CalendarTimeRows({
               transition: { duration: 0.2, delay: calendarExitDelay, ease: 'easeOut' },
             }}
             transition={{ duration: 0.2, ease: 'easeOut', layout: { type: 'tween', duration: 0.28, ease: 'easeInOut' } }}
-            className={`hidden lg:mx-2 lg:inline-block ${separatorClassName} font-thin text-gray-400`}
+            className={`relative ${hasOnlyDays ? 'mx-2 inline-block sm:hidden lg:inline-block' : 'hidden lg:mx-2 lg:inline-block'} ${separatorClassName} font-thin text-gray-400`}
+            style={{ top: -separatorVerticalOffset }}
           >
             :
           </motion.span>
@@ -766,24 +770,14 @@ export default function TimerDisplay() {
               >
                 <FiFlag className="text-xl pointer-events-none" />
               </button>
-              <ConfirmDialog
-                open={isStopwatchStopDialogOpen}
-                onOpenChange={setIsStopwatchStopDialogOpen}
-                title={t('controls.stopConfirmTitle')}
-                description={t('controls.stopConfirmDescription')}
-                cancelLabel={t('common.cancel')}
-                confirmLabel={t('controls.stopConfirmAction')}
-                onConfirm={() => handleStopwatchControl('stop')}
-                trigger={(
-                  <button
-                    aria-label={t('controls.stop')}
-                    className="glass-card p-4 rounded-full hover:bg-white/10 dark:hover:bg-black/10 transition-colors cursor-pointer select-none"
-                    style={{ color: activeTimer.color, zIndex: 41, position: 'relative', pointerEvents: 'auto', userSelect: 'none' }}
-                  >
-                    <FiSquare className="text-xl pointer-events-none" />
-                  </button>
-                )}
-              />
+              <button
+                onClick={() => setIsStopwatchStopDialogOpen(true)}
+                aria-label={t('controls.stop')}
+                className="glass-card p-4 rounded-full hover:bg-white/10 dark:hover:bg-black/10 transition-colors cursor-pointer select-none"
+                style={{ color: activeTimer.color, zIndex: 41, position: 'relative', pointerEvents: 'auto', userSelect: 'none' }}
+              >
+                <FiSquare className="text-xl pointer-events-none" />
+              </button>
             </motion.div>
           ) : null}
         </AnimatedRegion>
@@ -852,6 +846,28 @@ export default function TimerDisplay() {
             timerId={activeStopwatchTimer.id}
             laps={activeStopwatchTimer.laps || []}
             timerColor={activeTimer.color}
+          />
+        ) : null}
+      </AutoTransition>
+
+      <AutoTransition
+        portal
+        transitionKey={isStopwatchStopDialogOpen ? 'stopwatch-stop-confirm-open' : 'stopwatch-stop-confirm-closed'}
+        initial={false}
+        type="fade"
+      >
+        {isStopwatchStopDialogOpen && activeTimer.type === 'stopwatch' ? (
+          <StopwatchStopConfirmModal
+            title={t('controls.stopConfirmTitle')}
+            description={t('controls.stopConfirmDescription')}
+            cancelLabel={t('common.cancel')}
+            confirmLabel={t('controls.stopConfirmAction')}
+            timerColor={activeTimer.color}
+            onCancel={() => setIsStopwatchStopDialogOpen(false)}
+            onConfirm={() => {
+              handleStopwatchControl('stop');
+              setIsStopwatchStopDialogOpen(false);
+            }}
           />
         ) : null}
       </AutoTransition>

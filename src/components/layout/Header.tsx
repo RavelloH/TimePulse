@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import type { CSSProperties, ChangeEvent, MouseEvent as ReactMouseEvent } from 'react';
 import { AnimatePresence, Reorder, motion, useDragControls } from 'framer-motion';
 import { FiMenu, FiX, FiSettings, FiMoon, FiSun, FiUser, FiMaximize, FiMinimize, FiEdit, FiSave, FiGlobe, FiPlus, FiShare2, FiImage } from 'react-icons/fi';
@@ -100,7 +100,11 @@ function TimerManageRow({
   );
 }
 
-export default function Header() {
+type HeaderProps = {
+  onHeightChange?: (height: number) => void;
+};
+
+export default function Header({ onHeightChange }: HeaderProps) {
   const { timers, activeTimerId, setActiveTimerId, reorderTimers, deleteTimer, updateTimer } = useTimers();
   const { theme, toggleTheme, accentColor } = useTheme();
   const { isFullscreen, isHeaderVisible, headerHideDelay, showHeader, hideHeader } = useFullscreen();
@@ -116,6 +120,27 @@ export default function Header() {
   const [isTimerCreationOpen, setIsTimerCreationOpen] = useState(false);
   const [timerOrder, setTimerOrder] = useState(() => timers.map((timer) => timer.id));
   const timerOrderRef = useRef(timerOrder);
+  const navRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!nav || !onHeightChange) return;
+
+    const updateHeight = () => {
+      const marginTop = Number.parseFloat(window.getComputedStyle(nav).marginTop) || 0;
+      onHeightChange(nav.offsetHeight + marginTop);
+    };
+    updateHeight();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateHeight);
+      return () => window.removeEventListener('resize', updateHeight);
+    }
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(nav);
+    return () => resizeObserver.disconnect();
+  }, [onHeightChange]);
 
   useEffect(() => {
     const availableIds = new Set(timers.map((timer) => timer.id));
@@ -272,7 +297,7 @@ export default function Header() {
       }}
       transition={{ duration: 0.3 }}
     >
-      <nav className="glass-card mx-4 mt-4 px-6 py-4 flex items-center justify-between relative">
+      <nav ref={navRef} className="glass-card mx-4 mt-4 px-6 py-4 flex items-center justify-between relative">
         {/* Logo - 增强渐变效果，使用较深的相似色 */}
         <motion.div 
           className="flex items-center justify-start z-10"

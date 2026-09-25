@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Header from './Header';
 import Footer from './Footer';
@@ -11,17 +11,40 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 type LayoutProps = {
   children: ReactNode;
+  onHeaderHeightChange?: (height: number) => void;
 };
 
-export default function Layout({ children }: LayoutProps) {
+const SCROLL_HINT_DISMISSED_KEY = 'timepulse-scroll-hint-dismissed';
+
+function readScrollHintDismissed(): boolean {
+  try {
+    return localStorage.getItem(SCROLL_HINT_DISMISSED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export default function Layout({ children, onHeaderHeightChange }: LayoutProps) {
   const { t } = useTranslation();
   const { isFullscreen } = useFullscreen();
   const { isAbout, direction } = usePageTransition();
+  const [scrollHintDismissed, setScrollHintDismissed] = useState(readScrollHintDismissed);
+
+  useEffect(() => {
+    if (!isAbout || scrollHintDismissed) return;
+
+    setScrollHintDismissed(true);
+    try {
+      localStorage.setItem(SCROLL_HINT_DISMISSED_KEY, 'true');
+    } catch {
+      // Keep the hint dismissed for this session if storage is unavailable.
+    }
+  }, [isAbout, scrollHintDismissed]);
 
   return (
     <ThemeColorSynchronizer>
       <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-        <Header />
+        <Header onHeightChange={onHeaderHeightChange} />
 
         <div className="relative h-full min-h-0 overflow-hidden">
           {children}
@@ -72,12 +95,12 @@ export default function Layout({ children }: LayoutProps) {
         <UpdateToast />
 
         <AutoTransition
-          transitionKey={!isAbout && !isFullscreen ? 'page-hint-visible' : 'page-hint-hidden'}
+          transitionKey={!isAbout && !isFullscreen && !scrollHintDismissed ? 'page-hint-visible' : 'page-hint-hidden'}
           initial={false}
           type="slideUp"
           className="pointer-events-none fixed bottom-24 left-0 right-0 z-20 mx-auto w-full text-center text-sm text-gray-400"
         >
-          {!isAbout && !isFullscreen ? (
+          {!isAbout && !isFullscreen && !scrollHintDismissed ? (
             <motion.div
               animate={{ opacity: [0.6, 1, 0.6], y: [0, 10, 0] }}
               transition={{ repeat: Infinity, duration: 2 }}

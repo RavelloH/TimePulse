@@ -18,11 +18,14 @@ import {
   type TimeValue,
   type WorldClockTimer,
 } from '@/domain/timer';
+import { splitCalendarDuration } from '@/domain/time';
 import { getNextTimerUpdateDelay } from '../timerSchedule';
 import { AutoResizer, AutoTransition, type TransitionType } from '@/components/ui';
+import { ConfirmDialog } from '@/components/composed';
 
 type DisplayTime = {
   years: number;
+  months: number;
   days: number;
   hours: number;
   minutes: number;
@@ -70,20 +73,203 @@ function AnimatedRegion({
   );
 }
 
+type CalendarTimeRowsProps = {
+  timeValue: DisplayTime;
+  showYears: boolean;
+  showDays: boolean;
+  isValueVisible: boolean;
+  trend: -1 | 1;
+  color: string;
+  fontSize: FontSize;
+  labelFontSize: FontSize;
+  separatorClassName: string;
+  labels: { years: string; months: string; days: string; hours: string; minutes: string; seconds: string };
+};
+
+function CalendarTimeRows({
+  timeValue,
+  showYears,
+  showDays,
+  isValueVisible,
+  trend,
+  color,
+  fontSize,
+  labelFontSize,
+  separatorClassName,
+  labels,
+}: CalendarTimeRowsProps) {
+  const [calendarExitRevision, setCalendarExitRevision] = useState(0);
+  const calendarUnitOptions: Array<{ key: keyof Pick<DisplayTime, 'years' | 'months' | 'days'>; label: string }> = [
+    { key: 'years', label: labels.years },
+    { key: 'months', label: labels.months },
+    { key: 'days', label: labels.days },
+  ];
+  const calendarUnits = calendarUnitOptions.filter(unit => {
+    if (unit.key === 'years') return showYears;
+    if (unit.key === 'days') return showDays;
+    return timeValue[unit.key] > 0;
+  });
+  const hasCalendarUnits = calendarUnits.length > 0;
+
+  const calendarItems = calendarUnits.flatMap((unit, index) => [
+    ...(index > 0 ? [{ kind: 'separator' as const, key: `date-separator-${unit.key}` }] : []),
+    { kind: 'unit' as const, key: unit.key, unit },
+  ]);
+  const calendarExitDelay = Math.max(0, (calendarItems.length - 1) * 0.035 + 0.02);
+
+  const renderSeparator = (key: string) => (
+    <motion.span
+      key={key}
+      aria-hidden="true"
+      layout="position"
+      transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
+      className={`${separatorClassName} font-thin text-gray-400`}
+    >
+      :
+    </motion.span>
+  );
+
+  const renderDigit = (unit: { key: keyof DisplayTime; label: string; cycleAtSixty?: boolean }) => (
+    <DigitColumn
+      value={timeValue[unit.key]}
+      isValueVisible={isValueVisible}
+      trend={trend}
+      label={unit.label}
+      color={color}
+      fontSize={fontSize}
+      labelFontSize={labelFontSize}
+      cycleAtSixty={unit.cycleAtSixty}
+    />
+  );
+
+  const renderClockRow = (
+    units: Array<{ key: keyof DisplayTime; label: string; cycleAtSixty?: boolean }>,
+  ) => (
+    <motion.div
+      className="flex items-center justify-center space-x-2 sm:space-x-4"
+      layout="position"
+      layoutDependency={calendarExitRevision}
+      transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
+    >
+      {units.map((unit, index) => (
+        <Fragment key={unit.key}>
+          {index > 0 ? renderSeparator(`clock-separator-${unit.key}`) : null}
+          {renderDigit(unit)}
+        </Fragment>
+      ))}
+    </motion.div>
+  );
+
+  return (
+    <motion.div
+      className="flex flex-col items-center justify-center lg:flex-row"
+      layout="position"
+      animate={{ rowGap: hasCalendarUnits ? 4 : 0 }}
+      transition={{
+        duration: 0.32,
+        ease: 'easeOut',
+        layout: { type: 'tween', duration: 0.24, ease: 'easeOut' },
+        rowGap: { type: 'tween', duration: 0.24, ease: 'easeOut' },
+      }}
+    >
+      <motion.div
+        layout="position"
+        className="flex items-center justify-center"
+        transition={{ layout: { type: 'tween', duration: 0.28, ease: 'easeInOut' } }}
+      >
+        <motion.div
+          className="flex items-center justify-center space-x-2 sm:space-x-4"
+          layout="position"
+          transition={{ layout: { type: 'tween', duration: 0.28, ease: 'easeInOut' } }}
+        >
+          <AnimatePresence
+            initial={false}
+            onExitComplete={() => setCalendarExitRevision(revision => revision + 1)}
+          >
+            {calendarItems.map((item, index) => item.kind === 'separator' ? (
+              <motion.span
+                key={item.key}
+                aria-hidden="true"
+                layout="position"
+                initial={{ opacity: 0, y: trend < 0 ? -6 : 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: trend < 0 ? 6 : -6 }}
+                transition={{
+                  duration: 0.2,
+                  delay: index * 0.035,
+                  ease: 'easeOut',
+                  layout: { type: 'tween', duration: 0.28, ease: 'easeInOut' },
+                }}
+                className={`${separatorClassName} font-thin text-gray-400`}
+              >
+                :
+              </motion.span>
+            ) : (
+              <motion.div
+                key={item.key}
+                layout="position"
+                initial={{ opacity: 0, y: trend < 0 ? -10 : 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: trend < 0 ? 10 : -10 }}
+                transition={{
+                  duration: 0.22,
+                  delay: index * 0.035,
+                  ease: 'easeOut',
+                  layout: { type: 'tween', duration: 0.28, ease: 'easeInOut' },
+                }}
+                className="flex items-center"
+              >
+                {renderDigit(item.unit)}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
+      </motion.div>
+      <AnimatePresence initial={false}>
+        {hasCalendarUnits ? (
+          <motion.span
+            key="calendar-clock-separator"
+            aria-hidden="true"
+            layout="position"
+            initial={{ opacity: 0, scaleX: 0.6 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            exit={{
+              opacity: 0,
+              scaleX: 0.6,
+              transition: { duration: 0.2, delay: calendarExitDelay, ease: 'easeOut' },
+            }}
+            transition={{ duration: 0.2, ease: 'easeOut', layout: { type: 'tween', duration: 0.28, ease: 'easeInOut' } }}
+            className={`hidden lg:mx-2 lg:inline-block ${separatorClassName} font-thin text-gray-400`}
+          >
+            :
+          </motion.span>
+        ) : null}
+      </AnimatePresence>
+      {renderClockRow([
+        { key: 'hours', label: labels.hours },
+        { key: 'minutes', label: labels.minutes, cycleAtSixty: true },
+        { key: 'seconds', label: labels.seconds, cycleAtSixty: true },
+      ])}
+    </motion.div>
+  );
+}
+
 export default function TimerDisplay() {
   const { getActiveTimer, updateTimer, checkAndUpdateDefaultTimer } = useTimers();
   const { isFullscreen, timerFontSize: rawTimerFontSize, labelFontSize: rawLabelFontSize } = useFullscreen();
   const { t, currentLang } = useTranslation();
   const timerFontSize = (rawTimerFontSize || 'medium') as FontSize;
   const labelFontSize = (rawLabelFontSize || 'medium') as FontSize;
-  const [timeValue, setTimeValue] = useState<DisplayTime>({ years: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [timeValue, setTimeValue] = useState<DisplayTime>({ years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isInitialValuesReady, setIsInitialValuesReady] = useState(false);
   const [isDisplayVisible, setIsDisplayVisible] = useState(false);
-  const [showDays, setShowDays] = useState(true);
+  const [showDays, setShowDays] = useState(false);
   const [showYears, setShowYears] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [isLapModalOpen, setIsLapModalOpen] = useState(false);
+  const [isStopwatchStopDialogOpen, setIsStopwatchStopDialogOpen] = useState(false);
+  const [timeValueTimerType, setTimeValueTimerType] = useState<TimerType | null>(null);
   
   // 使用 ref 跟踪最后计算的时间，避免不必要的重渲染
   const lastTimeRef = useRef<DisplayTime | null>(null);
@@ -95,6 +281,7 @@ export default function TimerDisplay() {
   const areTimesEqual = (time1: DisplayTime, time2: DisplayTime | null) => {
     return time2 !== null &&
            time1.years === time2.years &&
+           time1.months === time2.months &&
            time1.days === time2.days && 
            time1.hours === time2.hours && 
            time1.minutes === time2.minutes && 
@@ -124,6 +311,7 @@ export default function TimerDisplay() {
   // 判断是否只有秒数变化（避免分钟数字不必要的重新渲染）
   const isOnlySecondsChanged = (time1: DisplayTime, time2: DisplayTime) => {
     return time1.years === time2.years &&
+           time1.months === time2.months &&
            time1.days === time2.days && 
            time1.hours === time2.hours && 
            time1.minutes === time2.minutes && 
@@ -139,8 +327,8 @@ export default function TimerDisplay() {
       // 倒计时结束
       if (!isFinished) {
         setIsFinished(true);
-        setTimeValue({ years: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
-        lastTimeRef.current = { years: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+        setTimeValue({ years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
+        lastTimeRef.current = { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
 
         try {
           const createdAt = timer.createdAt ? new Date(timer.createdAt).getTime() : null;
@@ -171,8 +359,8 @@ export default function TimerDisplay() {
       }
 
       if (timerChanged) {
-        setTimeValue({ years: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
-        lastTimeRef.current = { years: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+        setTimeValue({ years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
+        lastTimeRef.current = { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
         setShowYears(false);
         setShowDays(false);
       }
@@ -184,53 +372,28 @@ export default function TimerDisplay() {
       setIsFinished(false);
     }
     
-    // 计算天、时、分、秒
-    const totalDays = Math.floor(difference / (1000 * 60 * 60 * 24));
-    const years = Math.floor(totalDays / 365);
-    const days = totalDays % 365;
-    const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-    const minutes = Math.floor((difference / 1000 / 60) % 60);
-    const seconds = Math.floor((difference / 1000) % 60);
-    
-    const newTimeLeft = { years, days, hours, minutes, seconds };
+    // 将剩余时间按计时器时区拆成完整年月日和时分秒。
+    const newTimeLeft = splitCalendarDuration(now, targetDate.getTime(), timer.timezone);
     
     // 只有当时间真正变化时才更新状态
     if (!areTimesEqual(newTimeLeft, lastTimeRef.current)) {
       setTimeValue(newTimeLeft);
       lastTimeRef.current = newTimeLeft;
-      setShowYears(years > 0);
-      setShowDays(days > 0 || years > 0); // 当有年份或天数大于0时显示天数
+      setShowYears(newTimeLeft.years > 0);
+      setShowDays(newTimeLeft.days > 0 || newTimeLeft.months > 0 || newTimeLeft.years > 0);
     }
   };
   
   // 计算正计时经过时间
   const calculateStopwatchTime = (timer: StopwatchTimer, now: number) => {
-    const startTime = toDate(timer.startTime);
-    let elapsedMs = 0;
-    
-    if (timer.isRunning) {
-      // 正在运行中
-      elapsedMs = now - startTime.getTime() - (timer.totalPausedTime || 0);
-    } else if (timer.pausedAt) {
-      // 已暂停，显示暂停时的时间
-      const pausedAt = toDate(timer.pausedAt);
-      elapsedMs = pausedAt.getTime() - startTime.getTime() - (timer.totalPausedTime || 0);
-    } else {
-      // 初始状态或已重置
-      elapsedMs = 0;
-    }
-    
-    elapsedMs = Math.max(0, elapsedMs); // 确保不为负数
-    
-    const totalSeconds = Math.floor(elapsedMs / 1000);
-    const totalDays = Math.floor(totalSeconds / (24 * 60 * 60));
-    const years = Math.floor(totalDays / 365);
-    const days = totalDays % 365;
-    const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
-    const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
-    const seconds = totalSeconds % 60;
-    
-    const newTimeValue = { years, days, hours, minutes, seconds };
+    const startTimestamp = timer.startTime === null ? Number.NaN : toDate(timer.startTime).getTime();
+    const wallClockEnd = timer.isRunning
+      ? now
+      : timer.pausedAt
+        ? toDate(timer.pausedAt).getTime()
+        : startTimestamp;
+    const effectiveEnd = wallClockEnd - (timer.totalPausedTime || 0);
+    const newTimeValue = splitCalendarDuration(startTimestamp, effectiveEnd);
     
     // 智能更新：只有当时间确实变化时才更新状态
     // 对于正计时，我们特别处理避免不必要的重新渲染
@@ -238,14 +401,14 @@ export default function TimerDisplay() {
       // 如果只是秒数变化，我们延迟更新其他数字避免闪烁
       if (timer.type === 'stopwatch' && lastTimeRef.current && isOnlySecondsChanged(newTimeValue, lastTimeRef.current)) {
         // 只更新秒数
-        setTimeValue(prev => ({ ...prev, seconds }));
+        setTimeValue(prev => ({ ...prev, seconds: newTimeValue.seconds }));
       } else {
         // 全部更新
         setTimeValue(newTimeValue);
       }
       lastTimeRef.current = newTimeValue;
-      setShowYears(years > 0);
-      setShowDays(days > 0 || years > 0); // 当有年份或天数大于0时显示天数
+      setShowYears(newTimeValue.years > 0);
+      setShowDays(newTimeValue.days > 0 || newTimeValue.months > 0 || newTimeValue.years > 0);
     }
   };
   
@@ -259,6 +422,7 @@ export default function TimerDisplay() {
     
     const newTimeValue = { 
       years: 0,
+      months: 0,
       days: 0, 
       hours: hours, 
       minutes: minutes, 
@@ -295,9 +459,12 @@ export default function TimerDisplay() {
       if (timerChanged) {
         activeTimerIdentityRef.current = { id: timer.id, type: timerType };
         // Keep timeValue for NumberFlow's old-to-new animation, but make the
-        // next calculation refresh all timer-specific display fields.
+        // next calculation refresh all timer-specific display fields. Update
+        // the NumberFlow direction in the same render as that new value.
         lastTimeRef.current = null;
+        setTimeValueTimerType(timerType);
         setIsLapModalOpen(false);
+        setIsStopwatchStopDialogOpen(false);
         setIsRunning(timerType === 'stopwatch' && (timer as StopwatchTimer).isRunning === true);
         if (timerType !== 'countdown') setIsFinished(false);
       }
@@ -379,8 +546,8 @@ export default function TimerDisplay() {
           laps: [] // 清空分段记录
         });
         setIsRunning(false);
-        setTimeValue({ years: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
-        lastTimeRef.current = { years: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+        setTimeValue({ years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
+        lastTimeRef.current = { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
         track('stopwatch_stop');
         break;
 
@@ -405,7 +572,8 @@ export default function TimerDisplay() {
   
   const activeTimer = getActiveTimer() as Timer | null;
   const activeTimerType = activeTimer ? getTimerType(activeTimer) : null;
-  const numberTrend: -1 | 1 = activeTimerType === 'countdown' ? -1 : 1;
+  const displayedTimerType = timeValueTimerType ?? activeTimerType;
+  const numberTrend: -1 | 1 = displayedTimerType === 'countdown' ? -1 : 1;
   const activeStopwatchTimer = activeTimer?.type === 'stopwatch'
     ? activeTimer as StopwatchTimer
     : null;
@@ -455,6 +623,7 @@ export default function TimerDisplay() {
   };
 
   const timerClasses = getTimerFontSizeClasses();
+  const separatorClassName = timerClasses[timerFontSize];
   const labelClasses = getLabelFontSizeClasses();
 
   if (!activeTimer) {
@@ -533,162 +702,30 @@ export default function TimerDisplay() {
       <LayoutGroup id="timer-display-numeric-layout">
       <AutoResizer
         animateWidth={isInitialValuesReady}
+        animateHeight={false}
         initial={false}
         overflow="visible"
         className="flex items-center justify-center"
       >
-      <motion.div 
-        className={`flex items-center justify-center ${showYears ? 'flex-col sm:flex-row gap-2 sm:gap-0' : 'flex-row'} space-x-0 sm:space-x-4`}
-        layout="position"
-        transition={{
-          duration: 0.32,
-          ease: 'easeOut',
-          layout: { type: 'tween', duration: 0.24, ease: 'easeOut' },
-        }}
-      >
-        {/* 第一行：年数和天数 - 仅在需要时显示 */}
-        <AutoTransition
-          transitionKey={showYears ? 'years-visible' : 'years-hidden'}
-          initial={false}
-          type="fade"
-          className="flex items-center justify-center space-x-2 sm:space-x-4"
-        >
-          {showYears ? (
-            <Fragment key="years-row">
-            <DigitColumn
-              key="years"
-              value={timeValue.years}
-              isValueVisible={isDisplayVisible}
-              trend={numberTrend}
-              label={t('time.years')}
-              color={activeTimer.color || '#0ea5e9'}
-              fontSize={timerFontSize}
-              labelFontSize={labelFontSize}
-            />
-            <motion.span
-              key="years-separator"
-              layout="position"
-              transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
-              className={`${timerClasses[timerFontSize]} font-thin text-gray-400`}
-            >:</motion.span>
-            <AutoTransition
-              transitionKey={showDays ? 'days-visible-with-years' : 'days-hidden-with-years'}
-              initial={false}
-              type="fade"
-              className="flex items-center justify-center space-x-2 sm:space-x-4"
-            >
-              {showDays ? (
-                <Fragment key="days">
-                <DigitColumn
-                  key="days"
-                  value={timeValue.days}
-                  isValueVisible={isDisplayVisible}
-                  trend={numberTrend}
-                  label={t('time.days')}
-                  color={activeTimer.color || '#0ea5e9'}
-                  fontSize={timerFontSize}
-                  labelFontSize={labelFontSize}
-                />
-                <motion.span
-                  key="days-separator"
-                  layout="position"
-                  transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
-                  className="text-4xl sm:text-5xl md:text-6xl font-thin text-gray-400 hidden sm:inline"
-                >:</motion.span>
-                </Fragment>
-              ) : null}
-            </AutoTransition>
-            </Fragment>
-          ) : null}
-        </AutoTransition>
-
-        {/* 第二行：天数（当没有年数时）、小时、分钟、秒 */}
-        <motion.div
-          key="clock-row"
-          layout="position"
-          transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
-          className="flex items-center justify-center space-x-2 sm:space-x-4"
-        >
-          {/* 天数 - 仅在没有年数且需要时显示 */}
-          <AutoTransition
-            transitionKey={!showYears && showDays ? 'days-visible-without-years' : 'days-hidden-without-years'}
-            initial={false}
-            type="fade"
-            className="flex items-center justify-center space-x-2 sm:space-x-4"
-          >
-            {!showYears && showDays ? (
-              <Fragment key="days">
-              <DigitColumn
-                key="days"
-                value={timeValue.days}
-                isValueVisible={isDisplayVisible}
-                trend={numberTrend}
-                label={t('time.days')}
-                color={activeTimer.color || '#0ea5e9'}
-                fontSize={timerFontSize}
-                labelFontSize={labelFontSize}
-              />
-              <motion.span
-                key="days-separator"
-                layout="position"
-                transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
-                className={`${timerClasses[timerFontSize]} font-thin text-gray-400`}
-              >:</motion.span>
-              </Fragment>
-            ) : null}
-          </AutoTransition>
-
-          {/* 小时 */}
-          <DigitColumn
-            key="hours"
-            value={timeValue.hours}
-            isValueVisible={isDisplayVisible}
-            trend={numberTrend}
-            label={t('time.hours')}
-            color={activeTimer.color || '#0ea5e9'}
-            fontSize={timerFontSize}
-            labelFontSize={labelFontSize}
-          />
-          <motion.span
-            key="hours-separator"
-            layout="position"
-            transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
-            className="text-4xl sm:text-5xl md:text-6xl font-thin text-gray-400"
-          >:</motion.span>
-          
-          {/* 分钟 */}
-          <DigitColumn
-            key="minutes"
-            value={timeValue.minutes}
-            isValueVisible={isDisplayVisible}
-            trend={numberTrend}
-            cycleAtSixty
-            label={t('time.minutes')}
-            color={activeTimer.color || '#0ea5e9'}
-            fontSize={timerFontSize}
-            labelFontSize={labelFontSize}
-          />
-          <motion.span
-            key="minutes-separator"
-            layout="position"
-            transition={{ layout: { type: 'tween', duration: 0.24, ease: 'easeOut' } }}
-            className="text-4xl sm:text-5xl md:text-6xl font-thin text-gray-400"
-          >:</motion.span>
-          
-          {/* 秒 */}
-          <DigitColumn
-            key="seconds"
-            value={timeValue.seconds}
-            isValueVisible={isDisplayVisible}
-            trend={numberTrend}
-            cycleAtSixty
-            label={t('time.seconds')}
-            color={activeTimer.color || '#0ea5e9'}
-            fontSize={timerFontSize}
-            labelFontSize={labelFontSize}
-          />
-        </motion.div>
-      </motion.div>
+        <CalendarTimeRows
+          timeValue={timeValue}
+          showYears={showYears}
+          showDays={showDays}
+          isValueVisible={isDisplayVisible}
+          trend={numberTrend}
+          color={activeTimer.color || '#0ea5e9'}
+          fontSize={timerFontSize}
+          labelFontSize={labelFontSize}
+          separatorClassName={separatorClassName}
+          labels={{
+            years: t('time.years'),
+            months: t('time.months'),
+            days: t('time.days'),
+            hours: t('time.hours'),
+            minutes: t('time.minutes'),
+            seconds: t('time.seconds'),
+          }}
+        />
       </AutoResizer>
       </LayoutGroup>
       
@@ -729,13 +766,24 @@ export default function TimerDisplay() {
               >
                 <FiFlag className="text-xl pointer-events-none" />
               </button>
-              <button
-                onClick={() => handleStopwatchControl('stop')}
-                className="glass-card p-4 rounded-full hover:bg-white/10 dark:hover:bg-black/10 transition-colors cursor-pointer select-none"
-                style={{ color: activeTimer.color, zIndex: 41, position: 'relative', pointerEvents: 'auto', userSelect: 'none' }}
-              >
-                <FiSquare className="text-xl pointer-events-none" />
-              </button>
+              <ConfirmDialog
+                open={isStopwatchStopDialogOpen}
+                onOpenChange={setIsStopwatchStopDialogOpen}
+                title={t('controls.stopConfirmTitle')}
+                description={t('controls.stopConfirmDescription')}
+                cancelLabel={t('common.cancel')}
+                confirmLabel={t('controls.stopConfirmAction')}
+                onConfirm={() => handleStopwatchControl('stop')}
+                trigger={(
+                  <button
+                    aria-label={t('controls.stop')}
+                    className="glass-card p-4 rounded-full hover:bg-white/10 dark:hover:bg-black/10 transition-colors cursor-pointer select-none"
+                    style={{ color: activeTimer.color, zIndex: 41, position: 'relative', pointerEvents: 'auto', userSelect: 'none' }}
+                  >
+                    <FiSquare className="text-xl pointer-events-none" />
+                  </button>
+                )}
+              />
             </motion.div>
           ) : null}
         </AnimatedRegion>
@@ -801,6 +849,7 @@ export default function TimerDisplay() {
         {isLapModalOpen && activeStopwatchTimer ? (
           <LapTimesModal 
             onClose={() => setIsLapModalOpen(false)}
+            timerId={activeStopwatchTimer.id}
             laps={activeStopwatchTimer.laps || []}
             timerColor={activeTimer.color}
           />

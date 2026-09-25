@@ -64,6 +64,7 @@
   },
   "time": {
     "years": "Years",
+    "months": "Months",
     "days": "Days",
     "hours": "Hours",
     "minutes": "Minutes",
@@ -103,8 +104,11 @@
       "name": "Name",
       "timerName": "Timer Name",
       "namePlaceholder": "e.g. Study Time",
+      "startMode": "Start mode",
+      "startImmediately": "Start immediately",
+      "customStartTime": "Custom date and time",
       "description": "Stopwatch Description",
-      "descriptionText": "The stopwatch will count elapsed time from zero. It will start immediately after creation. You can pause and resume at any time.",
+      "descriptionText": "Start immediately by default, or choose a custom date and time in the past. You can pause and resume at any time.",
       "color": "Color",
       "selectColor": "Select Color",
       "createAndStart": "Create and Start"
@@ -226,6 +230,9 @@
     "pause": "Pause",
     "resume": "Resume",
     "stop": "Stop",
+    "stopConfirmTitle": "Stop and reset the stopwatch?",
+    "stopConfirmDescription": "The elapsed time will reset and all lap records will be cleared.",
+    "stopConfirmAction": "Stop and reset",
     "reset": "Reset",
     "lap": "Lap"
   },
@@ -235,6 +242,9 @@
     "lapInterval": "Interval",
     "totalTime": "Total",
     "noLaps": "No lap records",
+    "rename": "Rename segment",
+    "saveName": "Save name",
+    "delete": "Delete segment",
     "clear": "Clear Records"
   },
   "country": {

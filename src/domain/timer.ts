@@ -9,6 +9,7 @@ export type TimeValue = number | string | Date;
 
 export interface Lap {
   id?: string;
+  name?: string;
   time?: number;
   total?: number;
   elapsedMs?: number;

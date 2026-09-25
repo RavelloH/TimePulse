@@ -1,4 +1,4 @@
-import type { Timer } from '../../domain/timer';
+import type { Lap, Timer } from '../../domain/timer';
 
 export interface TimerState {
   timers: Timer[];
@@ -11,7 +11,27 @@ export type TimerAction =
   | { type: 'reorder'; ids: string[] }
   | { type: 'upsert'; timer: Timer }
   | { type: 'update'; timer: Timer }
+  | { type: 'renameStopwatchLap'; timerId: string; lapIndex: number; name: string }
+  | { type: 'deleteStopwatchLap'; timerId: string; lapIndex: number }
   | { type: 'remove'; id: string; replacement?: Timer };
+
+function updateStopwatchLaps(
+  state: TimerState,
+  timerId: string,
+  updateLaps: (laps: Lap[]) => Lap[] | null,
+): TimerState {
+  const timer = state.timers.find((item) => item.id === timerId);
+  if (!timer || timer.type !== 'stopwatch' || !Array.isArray(timer.laps)) return state;
+
+  const laps = updateLaps(timer.laps);
+  if (!laps) return state;
+
+  const updatedTimer = { ...timer, laps };
+  return {
+    ...state,
+    timers: state.timers.map((item) => item.id === timerId ? updatedTimer : item),
+  };
+}
 
 export function timerReducer(state: TimerState, action: TimerAction): TimerState {
   switch (action.type) {
@@ -52,6 +72,16 @@ export function timerReducer(state: TimerState, action: TimerAction): TimerState
       return state.timers.some((timer) => timer.id === action.timer.id)
         ? { ...state, timers: state.timers.map((timer) => timer.id === action.timer.id ? action.timer : timer) }
         : state;
+    case 'renameStopwatchLap':
+      return updateStopwatchLaps(state, action.timerId, (laps) => {
+        if (!Number.isInteger(action.lapIndex) || action.lapIndex < 0 || action.lapIndex >= laps.length) return null;
+        return laps.map((lap, index) => index === action.lapIndex ? { ...lap, name: action.name } : lap);
+      });
+    case 'deleteStopwatchLap':
+      return updateStopwatchLaps(state, action.timerId, (laps) => {
+        if (!Number.isInteger(action.lapIndex) || action.lapIndex < 0 || action.lapIndex >= laps.length) return null;
+        return laps.filter((_, index) => index !== action.lapIndex);
+      });
     case 'remove': {
       const remaining = state.timers.filter((timer) => timer.id !== action.id);
       const timers = remaining.length > 0 ? remaining : action.replacement ? [action.replacement] : [];

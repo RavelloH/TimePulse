@@ -41,6 +41,8 @@ export interface TimerContextValue {
   addTimer: (timerData: TimerInput) => string;
   deleteTimer: (id: string) => void;
   updateTimer: (id: string, updatedData: TimerUpdate) => void;
+  renameStopwatchLap: (timerId: string, lapIndex: number, name: string) => void;
+  deleteStopwatchLap: (timerId: string, lapIndex: number) => void;
   getActiveTimer: () => Timer | null;
   holidaysList: Holiday[];
   checkAndUpdateDefaultTimer: () => void;
@@ -230,6 +232,14 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     console.log(`${new Date().toLocaleTimeString()} | [计时器管理] 已更新计时器ID: ${id}`);
   }, [timers]);
 
+  const renameStopwatchLap = useCallback((timerId: string, lapIndex: number, name: string) => {
+    dispatch({ type: 'renameStopwatchLap', timerId, lapIndex, name });
+  }, []);
+
+  const deleteStopwatchLap = useCallback((timerId: string, lapIndex: number) => {
+    dispatch({ type: 'deleteStopwatchLap', timerId, lapIndex });
+  }, []);
+
   const getActiveTimer = useCallback(() => timers.find((timer) => timer.id === activeTimerId) ?? null, [activeTimerId, timers]);
 
   const value = useMemo<TimerContextValue>(() => ({
@@ -240,10 +250,12 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     addTimer,
     deleteTimer,
     updateTimer,
+    renameStopwatchLap,
+    deleteStopwatchLap,
     getActiveTimer,
     holidaysList,
     checkAndUpdateDefaultTimer,
-  }), [activeTimerId, addTimer, checkAndUpdateDefaultTimer, deleteTimer, getActiveTimer, holidaysList, reorderTimers, setActiveTimerId, timers, updateTimer]);
+  }), [activeTimerId, addTimer, checkAndUpdateDefaultTimer, deleteTimer, deleteStopwatchLap, getActiveTimer, holidaysList, renameStopwatchLap, reorderTimers, setActiveTimerId, timers, updateTimer]);
 
   return <TimerContext.Provider value={value}>{children}</TimerContext.Provider>;
 }

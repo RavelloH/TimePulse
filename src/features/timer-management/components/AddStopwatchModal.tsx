@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent } from 'react';
 import { motion } from 'framer-motion';
-import { FiX, FiCheck } from 'react-icons/fi';
+import { FiX, FiCheck, FiCalendar } from 'react-icons/fi';
 import { HexColorPicker } from 'react-colorful';
 import { useTimers } from '@/app/providers/TimerProvider';
 import { useTheme } from '@/app/providers/ThemeProvider';
@@ -41,7 +41,19 @@ type AddStopwatchModalProps = {
 type StopwatchFormData = {
   name: string;
   color: string;
+  startMode: 'now' | 'custom';
+  customStartTime: string;
 };
+
+function toLocalDateTimeInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+}
 
 export default function AddStopwatchModal({ onClose, onBack, embedded = false }: AddStopwatchModalProps) {
   const { addTimer } = useTimers();
@@ -61,12 +73,20 @@ export default function AddStopwatchModal({ onClose, onBack, embedded = false }:
   const [formData, setFormData] = useState<StopwatchFormData>({
     name: '',
     color: randomColor,
+    startMode: 'now',
+    customStartTime: toLocalDateTimeInputValue(new Date()),
   });
+  const customStartTimeMs = new Date(formData.customStartTime).getTime();
+  const isCustomStartTimeValid = Number.isFinite(customStartTimeMs) && customStartTimeMs <= Date.now();
   
   // 处理表单输入变化
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleStartModeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, startMode: e.target.value as StopwatchFormData['startMode'] }));
   };
   
   // 设置颜色
@@ -76,10 +96,15 @@ export default function AddStopwatchModal({ onClose, onBack, embedded = false }:
   
   // 提交表单
   const handleSubmit = () => {
+    const startDate = formData.startMode === 'now'
+      ? new Date()
+      : new Date(formData.customStartTime);
+    if (!Number.isFinite(startDate.getTime()) || startDate.getTime() > Date.now()) return;
+
     const timerData = {
       name: formData.name,
       type: 'stopwatch' as const,
-      startTime: new Date().toISOString(), // 正计时记录开始时间
+      startTime: startDate.toISOString(),
       color: formData.color,
       isRunning: true, // 创建后立即开始
     };
@@ -121,13 +146,62 @@ export default function AddStopwatchModal({ onClose, onBack, embedded = false }:
                   required
                 />
               </div>
+
+              <fieldset className="flex flex-col gap-2">
+                <legend className="block text-sm font-medium mb-1">
+                  {t('modal.addStopwatch.startMode', '开始方式')}
+                </legend>
+                <label className="flex items-center gap-3 rounded-lg border border-white/20 px-4 py-3 dark:border-white/10">
+                  <input
+                    type="radio"
+                    name="startMode"
+                    value="now"
+                    checked={formData.startMode === 'now'}
+                    onChange={handleStartModeChange}
+                    style={{ accentColor }}
+                  />
+                  <span>{t('modal.addStopwatch.startImmediately', '立刻开始')}</span>
+                </label>
+                <label className="flex items-center gap-3 rounded-lg border border-white/20 px-4 py-3 dark:border-white/10">
+                  <input
+                    type="radio"
+                    name="startMode"
+                    value="custom"
+                    checked={formData.startMode === 'custom'}
+                    onChange={handleStartModeChange}
+                    style={{ accentColor }}
+                  />
+                  <span>{t('modal.addStopwatch.customStartTime', '自定义时间')}</span>
+                </label>
+                {formData.startMode === 'custom' ? (
+                  <div>
+                    <label className="block text-sm font-medium mb-1" htmlFor="stopwatch-start-time">
+                      {t('modal.addStopwatch.customStartTime', '自定义时间')}
+                    </label>
+                    <div className="flex items-center">
+                      <span className="absolute pl-3 text-gray-500 z-10"><FiCalendar /></span>
+                      <input
+                        id="stopwatch-start-time"
+                        type="datetime-local"
+                        step="1"
+                        name="customStartTime"
+                        value={formData.customStartTime}
+                        max={toLocalDateTimeInputValue(new Date())}
+                        onChange={handleChange}
+                        className="w-full pl-10 pr-4 py-2 rounded-lg bg-white/10 dark:bg-black/10 backdrop-blur-sm border border-white/20 dark:border-white/10 focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                        required
+                      />
+                    </div>
+                  </div>
+                ) : null}
+              </fieldset>
               
               <div className="bg-green-500/10 dark:bg-green-900/20 backdrop-blur-sm border border-green-500/20 dark:border-green-400/20 p-4 rounded-lg">
                 <h3 className="font-medium text-green-800 dark:text-green-200 mb-2">
                   {t('modal.addStopwatch.description', '正计时说明')}
                 </h3>
                 <p className="text-sm text-green-600 dark:text-green-300">
-                  {t('modal.addStopwatch.descriptionText', '正计时将从零开始计算经过的时间，创建后会立即开始计时。您可以随时暂停和恢复计时。')}
+                  {t('modal.addStopwatch.descriptionText', '默认立即开始，也可以选择过去的自定义日期和时间。您可以随时暂停和恢复计时。')}
                 </p>
               </div>
             </form>
@@ -142,7 +216,7 @@ export default function AddStopwatchModal({ onClose, onBack, embedded = false }:
               <button
                 className="btn-glass-primary"
                 onClick={() => goToStep(2)}
-                disabled={!formData.name}
+                disabled={!formData.name || (formData.startMode === 'custom' && !isCustomStartTimeValid)}
                 data-insightflare-event="stopwatch_step_color"
               >
                 {t('common.next', '下一步')}
@@ -201,6 +275,7 @@ export default function AddStopwatchModal({ onClose, onBack, embedded = false }:
               <button
                 className="btn-glass-primary"
                 onClick={handleSubmit}
+                disabled={formData.startMode === 'custom' && !isCustomStartTimeValid}
                 data-insightflare-event="stopwatch_create_confirm"
               >
                 {t('modal.addStopwatch.createAndStart', '创建并开始')}

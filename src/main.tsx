@@ -2,7 +2,7 @@ import { createRoot } from 'react-dom/client';
 import App from './app/App';
 import '../styles/globals.css';
 
-const INSIGHTFLARE_SCRIPT_URL = 'https://insightflare.ravelloh.top/script.js';
+const INSIGHTFLARE_SCRIPT_URL = 'https://insight.ravelloh.com/script.js?siteId=097654ef-9484-4e52-b5fe-b3d3307da1e2';
 
 function disableDevelopmentServiceWorker() {
   if (!import.meta.env.DEV || !('serviceWorker' in navigator)) return;

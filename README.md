@@ -55,6 +55,27 @@ TimePulse 是一个具有现代化 UI 和交互的计时器网页应用，支持
 ### Vercel一键部署
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FRavelloH%2FTimePulse)
 
+### Cloudflare Workers 部署
+
+项目使用 Vite 输出纯静态网站，并通过 Workers Static Assets 提供 SPA 路由回退。仓库已包含 `wrangler.jsonc`，无需单独创建 Worker 入口文件。
+
+在 Cloudflare Workers → Settings → Build 中设置：
+
+- **Root directory**：`/`
+- **Production branch**：`main`
+- **Build command**：`pnpm run build`
+- **Deploy command**：`pnpm run deploy`
+
+`package.json` 已将 pnpm 固定为 11.1.3，Workers Builds 会优先采用此版本。构建产物为 `dist/`，包含 PWA 的 Service Worker 和静态资源。
+
+本地手动部署：
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run build
+pnpm run deploy
+```
+
 ### 本地运行
 
 1. 克隆仓库

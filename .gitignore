@@ -5,3 +5,6 @@ out
 .vscode
 test-results
 playwright-report
+
+# Cloudflare Wrangler local state
+.wrangler/
